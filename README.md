@@ -17,7 +17,7 @@ all driver repositories.
 
 | Device | Repository | Status |
 |---|---|---|
-| _(none yet)_ | | |
+| Keysight U1242C | [Keysight_U1242C](https://github.com/ami3go/Keysight_U1242C) | wip |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
