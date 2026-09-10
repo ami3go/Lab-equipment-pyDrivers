@@ -21,6 +21,12 @@ all driver repositories.
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
+## Shared libraries
+
+| Purpose | Repository | Status |
+|---|---|---|
+| SCPI interface core (base classes for SCPI-speaking instrument drivers) | [scpi-driver-core](https://github.com/ami3go/scpi-driver-core) (private) | wip |
+
 ## Adding a new driver
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the naming convention, expected repo
