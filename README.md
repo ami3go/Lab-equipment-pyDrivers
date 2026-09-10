@@ -18,6 +18,7 @@ all driver repositories.
 | Device | Repository | Status |
 |---|---|---|
 | Keysight U1242C | [Keysight_U1242C](https://github.com/ami3go/Keysight_U1242C) | wip |
+| HP/Agilent/Keysight 34401A | [hp34401a-driver](https://github.com/ami3go/hp34401a-driver) | wip |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
