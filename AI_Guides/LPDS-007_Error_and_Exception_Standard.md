@@ -921,43 +921,11 @@ Redaction shall not remove essential non-sensitive diagnostic information such a
 
 ---
 
-## 22. Error Catalogue Artifact
+## 22. Documenting Your Errors
 
-Each driver package shall provide, directly or through equivalent generated documentation:
+A driver's exception classes (§6) plus their docstrings are the primary documentation of what can go wrong and why — that's usually enough for a driver with a handful of error paths. A separate `docs/error_reference.md` listing code, meaning, trigger condition, and whether it's retryable is a good addition once the driver has enough distinct failure modes that a reader benefits from seeing them in one place (Appendix B has a minimal template); it's not something every driver needs from day one.
 
-```text
-<driver_name>/
-├── errors.py
-├── diagnostics.py
-├── docs/
-│   └── error_reference.md
-├── ai/
-│   └── ai_contract.yaml
-└── tests/
-    ├── unit/
-    └── conformance/
-```
-
-The driver error catalogue shall contain for every public error:
-
-- code;
-- exception class;
-- title;
-- meaning;
-- trigger conditions;
-- affected methods;
-- retryable Boolean or rule;
-- recovery classification;
-- required recovery action;
-- post-failure driver state;
-- whether device state may be uncertain;
-- operator message template;
-- structured fields;
-- test references;
-- first driver version containing the error;
-- deprecation status.
-
-No public error shall exist only in source code without catalogue coverage.
+If you publish an LPDS-017 AI Driver Contract, its error catalogue (§23) needs to stay consistent with the exception hierarchy either way.
 
 ---
 
@@ -984,25 +952,8 @@ An AI agent shall be able to determine from LPDS-017 whether it may retry, recon
 
 ---
 
-## 24. LPDS-018 Integration
 
-LPDS-018 may impose bench-wide error and recovery rules that are stricter than a single driver policy.
-
-Examples:
-
-- a PSU timeout requires relay isolation before reconnection;
-- a DMM failure permits substitution by a preferred alternate meter;
-- an interlock failure requires operator acknowledgement;
-- a shared VISA resource conflict prevents parallel execution;
-- a bench emergency requires a defined multi-driver shutdown sequence.
-
-When driver and bench recovery rules differ, the safer and more restrictive applicable rule shall govern.
-
-Bench-level orchestration shall preserve the original driver error code while adding bench correlation and recovery evidence.
-
----
-
-## 25. LPDS-019 Conformance Integration
+## 24. LPDS-019 Conformance Integration
 
 LPDS-019 protocol conformance tests shall verify applicable LPDS-007 behavior, including:
 
@@ -1020,7 +971,7 @@ A protocol failure shall not pass merely because the method raised an exception.
 
 ---
 
-## 26. Testing Requirements
+## 25. Testing Requirements
 
 ### 26.1 Unit tests
 
@@ -1082,104 +1033,21 @@ Automation-framework adapter tests shall verify:
 
 ---
 
-## 27. Acceptance Criteria
+## 26. Checklist
 
-A driver conforms to LPDS-007 only when:
-
-1. all public driver exceptions inherit from `DriverError`;
-2. the canonical hierarchy is implemented or imported;
-3. every public error has a stable unique code;
-4. every raised public exception contains the mandatory data;
-5. all public failure messages begin with the error code;
-6. invalid locally detectable input is rejected before I/O;
-7. raw third-party exceptions do not leak through the public boundary;
-8. original causes are preserved by exception chaining;
-9. all potentially blocking operations have finite timeouts;
-10. retry behavior is explicit, bounded, and idempotency-aware;
-11. uncertain state-changing outcomes use `LPDS-STA-003` or an approved subclass;
-12. cleanup failures do not mask the primary failure;
-13. post-failure state and recovery class are documented;
-14. structured diagnostics are JSON serializable;
-15. secrets are redacted from messages, logs, and evidence;
-16. LPDS-017 lists applicable errors per capability;
-17. LPDS-019 verifies applicable protocol errors and recovery;
-18. no mandatory error test remains NOT RUN without approved justification;
-19. documentation and examples use the same error codes and class names as the implementation;
-20. no Critical or Major error-handling review finding remains unresolved at release.
+- [ ] All public exceptions inherit from `DriverError`; built-in exception names (`ValueError`, `TimeoutError`, etc.) don't leak through the public boundary unexpectedly.
+- [ ] Each public error has a stable code, and the same code doesn't mean two different things.
+- [ ] Original causes are preserved via exception chaining (`raise ... from exc`).
+- [ ] Locally-detectable invalid input is rejected before it's transmitted to the device.
+- [ ] Every potentially blocking operation has a finite timeout; retries are explicit, bounded, and idempotency-aware.
+- [ ] A driver never reports success after an operational failure, and never masks a primary failure with a cleanup-time secondary one.
+- [ ] An uncertain state-changing outcome is represented as uncertain (`DriverOperationUncertainError` or similar), not silently treated as success or failure.
+- [ ] Secrets are redacted from messages, logs, and diagnostics.
+- [ ] If published, LPDS-017 lists the applicable errors per capability and stays consistent with the implementation.
 
 ---
 
-## 28. Failure Conditions
-
-LPDS-007 conformance shall fail when:
-
-- a driver returns apparent success after an operational failure;
-- a public exception lacks an error code;
-- the same code has multiple meanings;
-- a released code is reused;
-- a raw vendor or built-in exception reaches the public API boundary unexpectedly;
-- a timeout can block indefinitely;
-- retry is unlimited or hidden;
-- a non-idempotent uncertain command is automatically repeated;
-- an invalid local argument is transmitted unnecessarily;
-- a cleanup exception replaces the primary exception;
-- the public message exposes a secret;
-- the driver logs a failure but returns success;
-- a recoverable error has no tested recovery path;
-- an unrecoverable error is marked retryable;
-- post-failure state is undefined;
-- LPDS-017 error metadata contradicts implementation;
-- LPDS-019 expected error behavior contradicts implementation;
-- error evidence cannot be correlated with the method and protocol operation.
-
----
-
-## 29. Review Checklist
-
-1. Is there one documented `DriverError` root class?
-2. Do all public exceptions inherit from it?
-3. Are built-in exception names avoided at the public boundary?
-4. Does every public error have a stable unique code?
-5. Are all codes present in the error catalogue?
-6. Are messages deterministic, concise, and actionable?
-7. Are required structured fields present?
-8. Are original causes preserved?
-9. Are validation failures detected before I/O?
-10. Are timeouts finite and documented?
-11. Is retry bounded and safe for the operation?
-12. Is uncertain command delivery represented explicitly?
-13. Does every failure define the post-failure state?
-14. Is recovery classified and tested?
-15. Are secondary cleanup failures retained without masking the primary failure?
-16. Are secrets redacted from all output surfaces?
-17. Are logs free from duplicate final error entries?
-18. Are framework or test-assertion failures separated from driver exceptions?
-19. Does LPDS-017 list the applicable errors per method?
-20. Does LPDS-019 test protocol failures and recovery at the device boundary?
-21. Are documentation, examples, tests, and implementation consistent?
-22. Are all Critical and Major review findings resolved?
-
----
-
-## 30. Minimum Definition of Done
-
-LPDS-007 implementation is complete for a driver when:
-
-- the root exception and canonical hierarchy exist;
-- the error-code catalogue is complete;
-- all public methods declare their applicable errors;
-- structured diagnostics are generated;
-- callers receive canonical failure messages via raised exceptions;
-- timeout, retry, uncertain-state, and recovery behavior are implemented;
-- redaction is implemented and tested;
-- unit and adapter error tests pass;
-- LPDS-019 protocol error and recovery vectors pass where applicable;
-- LPDS-017 and user documentation are updated;
-- error-handling review finds no unresolved Critical or Major issue.
-
----
-
-## 31. Reference Implementation Pattern
+## 27. Reference Implementation Pattern
 
 The following pattern is informative. Equivalent implementations are permitted when all normative requirements are met.
 
@@ -1272,7 +1140,7 @@ def main(resource: str) -> int:
 
 ---
 
-## 32. Goal
+## 28. Goal
 
 Provide one unified and machine-verifiable failure model for every LPDS Python instrument driver so that operators, test suites, CI systems, and AI agents can distinguish invalid input, transport failure, protocol failure, device rejection, unsafe operation, uncertain state, recoverable failure, and internal defect without inspecting driver source code.
 

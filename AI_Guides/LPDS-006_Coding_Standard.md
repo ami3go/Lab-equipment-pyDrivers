@@ -1134,210 +1134,31 @@ The following practices are prohibited in released production code unless an app
 
 ---
 
-## 20. Required Quality Evidence
+## 20. Keeping Things in Sync
 
-Each gate or release that modifies Python code shall record the following evidence in the applicable `review/` entry or generated quality report:
+When a code change adds, removes, renames, or changes a public API or device-facing behaviour, update in the same commit: type annotations and docstrings, tests covering the change, any usage examples affected, and — where published — the AI driver contract (LPDS-017) and conformance vectors (LPDS-019). A public API change that leaves the docstring or an example silently wrong is worse than one that took an extra five minutes.
 
-| Check | Required evidence |
-|---|---|
-| Formatting | Formatter check command and PASS result |
-| Linting | Linter command, configuration, and PASS result |
-| Static typing | Type-check command and PASS result or approved findings |
-| Unit and integration tests | Test command and summarized result |
-| Public API review | Added, changed, deprecated, and removed public symbols |
-| API documentation | Generated API reference build result (for example Sphinx or mkdocs) or equivalent validation |
-| Logging review | Confirmation of levels, redaction, and no `print()` diagnostics |
-| Exception review | Error hierarchy and failure-message review |
-| Security review | Secret scan or equivalent repository check |
-| Compatibility review | Supported Python versions and dependency compatibility |
-
-A PASS claim shall identify the command, tool version, and revision tested.
+Two defect categories are worth treating as "fix before moving on" rather than "note for later," because they're the ones that actually hurt: anything that could cause unsafe hardware behaviour, secret disclosure, uncontrolled device operation, or a silently false success; and anything that breaks the public API contract (a signature change, a timeout that's no longer bounded, a type-safety hole at a public boundary). Everything else — style nits, missing docstrings, refactoring opportunities — is fine to track and fix opportunistically.
 
 ---
 
-## 21. Gate Integration
+## 21. Checklist
 
-LPDS lifecycle gates shall apply LPDS-006 as follows.
+- [ ] Formatting and linting pass (`ruff format` / `ruff check` or equivalent — Appendix A).
+- [ ] Static type checking passes for production code without unexplained `# type: ignore`.
+- [ ] Every public method is fully typed and documented (arguments, units, side effects, return, errors, timing, safety — §11).
+- [ ] Every blocking operation has an effective, bounded timeout; retries are bounded and safe.
+- [ ] The exception hierarchy is used consistently; messages are actionable and chain the original cause.
+- [ ] Logs use appropriate levels and never leak credentials or secrets (§12, §15-16).
+- [ ] Cleanup/disconnect is deterministic and idempotent.
+- [ ] Tests cover the changed behaviour and pass.
+- [ ] Examples, docs, and (if published) the AI contract still match the current API.
 
-### 21.1 Gate 1 — Architecture and Skeleton
-
-Required:
-
-- package imports successfully;
-- formatter, linter, and type-check configuration exists;
-- public interfaces are typed;
-- module boundaries and exception hierarchy are defined;
-- no Critical coding-standard finding remains.
-
-### 21.2 Gate 2 — Core Implementation
-
-Required:
-
-- implemented public methods are typed and documented;
-- validation and error handling are present;
-- no uncontrolled print diagnostics exist;
-- core unit tests pass;
-- device-facing operations have bounded timeouts.
-
-### 21.3 Gate 3 — Extended Features
-
-Required:
-
-- new features preserve architecture and API consistency;
-- edge cases and retries follow this standard;
-- AI contract and public API documentation remain synchronized;
-- no unjustified complexity increase remains.
-
-### 21.4 Gate 4 — Tests and Documentation
-
-Required:
-
-- full quality-tool suite passes;
-- public documentation and examples reflect current signatures;
-- log and error paths are tested;
-- static type checking passes for production code;
-- generated API reference documentation builds successfully.
-
-### 21.5 Gate 5 — Review and Release
-
-Required:
-
-- no Critical or Major LPDS-006 findings remain unresolved;
-- any approved deviations are listed with owner and rationale;
-- quality evidence is stored in `review/`;
-- coding changes are described in `history/`;
-- release documentation uses the final public API.
+A vendor SDK limitation is a reason to isolate the limitation behind a typed, documented adapter — not a reason to skip typing or error handling around it.
 
 ---
 
-## 22. Review Severity
-
-Coding-standard findings shall use these severities:
-
-### Critical
-
-A defect that may cause:
-
-- unsafe hardware behaviour;
-- secret disclosure;
-- uncontrolled or indefinite device operation;
-- corrupt protocol output with significant risk;
-- silent false success;
-- unrecoverable package import or startup failure.
-
-Critical findings block every gate and release.
-
-### Major
-
-A defect that materially affects:
-
-- public API correctness;
-- error classification;
-- timeout behaviour;
-- type safety at a public boundary;
-- testability;
-- protocol traceability;
-- maintainability of a significant feature.
-
-Major findings block phase completion and release unless an explicit approved deviation exists.
-
-### Minor
-
-A localized maintainability, clarity, documentation, or consistency issue that does not materially change behaviour.
-
-Minor findings should be fixed in the current gate or tracked with a specific follow-up reference.
-
-### Observation
-
-A non-blocking improvement or future refactoring opportunity.
-
----
-
-## 23. Approved Deviations
-
-A deviation from LPDS-006 shall be recorded in the gate review and include:
-
-- requirement identifier or section;
-- affected files and symbols;
-- technical reason;
-- risk assessment;
-- compensating control;
-- owner;
-- expiry condition or review date.
-
-A vendor SDK limitation alone is not sufficient justification unless the driver isolates the limitation behind a typed and documented adapter.
-
----
-
-## 24. Change Control
-
-Whenever a code change adds, removes, renames, aliases, deprecates, or changes a public API or device-facing behaviour, the same revision shall update all applicable artifacts:
-
-- type annotations;
-- docstrings and generated API reference content;
-- unit and integration tests;
-- usage examples, including any automation-framework adapter examples;
-- README and user guide;
-- AI driver contract under LPDS-017;
-- protocol conformance vectors under LPDS-019;
-- history entry;
-- code review entry.
-
-A public API change without synchronized documentation and verification shall fail review.
-
----
-
-## 25. Review Checklist
-
-1. Does every production module have one clear responsibility?
-2. Are public APIs intentionally exposed and stable?
-3. Are all public methods fully typed?
-4. Does static type checking pass without unexplained ignores?
-5. Does automated formatting pass?
-6. Does linting pass without broad suppressions?
-7. Are names explicit, consistent, and unit-aware?
-8. Are mutable defaults, hidden globals, and import-time side effects absent?
-9. Are public API methods documented for arguments, units, side effects, returns, errors, timing, and safety?
-10. Are protocol commands built and parsed in testable code?
-11. Does every blocking operation have an effective timeout?
-12. Are retries bounded, safe, and observable?
-13. Is the exception hierarchy meaningful and consistently used?
-14. Are exception messages actionable and chained to original causes?
-15. Are logs emitted at appropriate levels?
-16. Are protocol traces directional, attributable, and safely redacted?
-17. Does library code avoid changing global logging configuration?
-18. Are credentials and secrets absent from source, examples, logs, and errors?
-19. Are cleanup and disconnect operations deterministic and idempotent?
-20. Is concurrency behaviour documented and protected?
-21. Are examples and documentation synchronized with the current API?
-22. Are quality commands and tool versions recorded in review evidence?
-23. Are all Critical and Major findings resolved or formally approved?
-24. Are LPDS-017 and LPDS-019 artifacts updated when public calls change?
-25. Is the implementation understandable without relying on undocumented developer knowledge?
-
----
-
-## 26. Minimum Definition of Done
-
-A Python code revision satisfies LPDS-006 when:
-
-- production code is automatically formatted;
-- linting passes;
-- static type checking passes for production code;
-- all public API methods (and any automation-framework adapter bindings) are typed and documented;
-- no prohibited practice remains;
-- all device-facing operations have bounded timeout behaviour;
-- exceptions are categorized, actionable, and preserve causes;
-- logging uses the defined levels and redacts sensitive data;
-- tests for changed behaviour pass;
-- generated API reference documentation builds successfully for the driver package;
-- public API, examples, AI contract, and conformance artifacts are synchronized;
-- required quality evidence is stored in the gate or release review;
-- no unresolved Critical or Major coding-standard finding remains.
-
----
-
-## 27. Goal
+## 22. Goal
 
 Provide a uniform, enforceable Python engineering standard so that every LPDS Python instrument driver is readable, typed, documented, diagnosable, testable, hardware-safe, and maintainable across repeated revisions.
 
