@@ -9,27 +9,9 @@
 
 ## 1. Purpose
 
-This specification defines the mandatory review method used to decide whether an LPDS Python instrument driver is ready for production release.
+This specification defines a review checklist for deciding whether an LPDS Python instrument driver is ready to call `stable` (LPDS-001 §9). It looks at the driver as a whole, not just the source diff: functional correctness, architecture, public API quality, transport/protocol behaviour, error handling, safety and cleanup, tests, real-device validation, AI contract consistency, and packaging/documentation.
 
-The review shall evaluate the exact release candidate as an integrated product, not only the Python source code. It shall combine evidence for:
-
-- functional correctness;
-- architecture and maintainability;
-- public API quality;
-- transport and protocol behaviour;
-- error handling, timeout, retry, and recovery;
-- safety and cleanup;
-- configuration and resource ownership;
-- testing and regression protection;
-- real-device or approved simulator validation;
-- LPDS-019 call and protocol conformance;
-- AI Driver Contract consistency;
-- packaging, installation, documentation, examples, and scripts;
-- compatibility, security, release integrity, and traceability.
-
-The output of LPDS-010 is a documented production-readiness verdict supported by reproducible evidence and an explicit finding register.
-
-A numerical score may summarize quality, but it shall never override a release-blocking defect.
+The output is simply: what you checked, what you found, and what you fixed or noted for later — written down somewhere visible. There's no formal scoring model or verdict taxonomy; a driver is either ready to call `stable` or it isn't yet, and the reasons why are more useful than a number.
 
 ---
 
@@ -48,7 +30,7 @@ LPDS-010 covers:
 - protocol and transport review;
 - safety, state, resource, and cleanup review;
 - test strategy, execution results, coverage, and evidence review;
-- LPDS-017, LPDS-018 where applicable, and LPDS-019 consistency;
+- LPDS-017 and LPDS-019 consistency;
 - documentation, examples, scripts, guides, README, and GitHub Pages review;
 - versioning, release identity, changelog, history, checksums, and provenance review;
 - compatibility, dependency, supply-chain, licence, and secret-handling review;
@@ -78,12 +60,8 @@ LPDS-010 reviews the evidence from those activities and determines whether the e
 - **shall / shall not** — mandatory requirement;
 - **should / should not** — recommended requirement; deviation requires recorded justification;
 - **may** — permitted implementation choice;
-- **release candidate** — the exact archive and source revision submitted for review;
-- **finding** — a documented nonconformity, defect, risk, or observation;
-- **blocking finding** — a finding that prohibits the requested release verdict;
-- **evidence** — a reproducible file, report, command output, trace, test result, or reviewed source reference supporting a conclusion;
-- **residual risk** — risk remaining after implemented corrections and controls;
-- **waiver** — formal acceptance of a specific unresolved requirement or finding by an authorized approver.
+- **finding** — something the review turned up worth fixing or noting;
+- **evidence** — a reproducible file, report, command output, or test result supporting a conclusion, as opposed to an unverified claim.
 
 ---
 
@@ -102,7 +80,6 @@ The review shall use the latest approved applicable revision of:
 - LPDS-009 — Testing Standard;
 - LPDS-011 — Release Process;
 - LPDS-017 — AI Driver Contract Specification;
-- LPDS-018 — AI Test Bench Contract Specification, when bench integration is claimed or required;
 - LPDS-019 — Driver Call and Protocol Conformance Test Specification;
 - LPDS-020 — Driver Implementation Lifecycle;
 - the device-specific implementation requirements;
@@ -123,205 +100,15 @@ A conflict shall be recorded and resolved. It shall not be silently interpreted.
 
 ## 5. Review occasions
 
-LPDS-010 shall be applied at the following occasions.
+This is meant as a self-review checklist first and foremost — there's no assumption that a different person has to run it, though a second pair of eyes is always welcome if one's available. Run it before moving a driver from `untested` to `stable` (LPDS-001 §9), and again after any change to the public API, protocol handling, or safety-relevant behavior.
 
-### 5.1 Gate review
+When you find something worth fixing, a simple two-tier distinction is enough for most projects: things that could cause unsafe hardware behaviour, data corruption, or a silently wrong result are worth fixing before you call the driver `stable`; everything else (missing docs, rough edges, nice-to-have coverage) is fine to note in the README or an issue and come back to.
 
-Every implementation gate shall receive a scoped review of the delivered change. Gate review may use reduced evidence appropriate to the gate, but shall still record findings and release limitations.
-
-### 5.2 Phase-completion review
-
-Gate 5 of every phase shall include a complete review of the phase output, regression impact, documentation, AI contract, and release package.
-
-### 5.3 Production release review
-
-Every production release shall receive a full LPDS-010 review against the exact packaged bytes proposed for release.
-
-### 5.4 Hotfix review
-
-A hotfix may use a focused review only when:
-
-- the change scope is narrow and documented;
-- affected components and regression risks are identified;
-- all release-blocking checks remain executed;
-- the full package is rebuilt and validated;
-- the hotfix does not bypass safety, protocol, compatibility, or release-integrity controls.
-
-### 5.5 Re-review
-
-Re-review is required after:
-
-- correction of a Critical or Major finding;
-- change to public API methods or signatures;
-- change to protocol serialization or parsing;
-- change to connection, timeout, retry, recovery, or cleanup behaviour;
-- change to safety limits or safe state;
-- change to package identity, dependencies, build, or release scripts;
-- regeneration of the release archive;
-- any change that invalidates previous evidence.
+There's no fixed list of required review-output files or formal PASS/FAIL/WAIVED status vocabulary here — write down what you found and fixed however's convenient (a CHANGELOG entry, an issue, notes in `review/` if you keep one). The point is that the check happened and its results are visible, not that it followed a particular template.
 
 ---
 
-## 6. Review independence and responsibilities
-
-### 6.1 Reviewer independence
-
-A production review should be performed by a person or agent other than the primary implementer. When this is not practical, the review shall explicitly state that it is a self-review and identify compensating controls such as additional automated checks, independent test evidence, or second approval.
-
-### 6.2 Required roles
-
-The review record shall identify:
-
-- implementation owner;
-- reviewer;
-- release approver;
-- hardware or bench owner when HIL is required;
-- risk owner for each accepted residual risk.
-
-One person may hold multiple roles, but role overlap shall be visible.
-
-### 6.3 Reviewer obligations
-
-The reviewer shall:
-
-- inspect the exact release candidate;
-- reproduce representative build, install, test, and example workflows;
-- verify evidence rather than rely only on statements in documentation;
-- distinguish verified facts from assumptions;
-- avoid marking an item PASS when evidence is absent;
-- record all skipped, deferred, excluded, or not-applicable items;
-- issue a verdict consistent with the blocking rules in this specification.
-
----
-
-## 7. Required review inputs
-
-The release candidate shall provide at least:
-
-1. release ZIP named according to the project versioning rule;
-2. stable internal package root `<driver_name>/`;
-3. source revision or commit identifier;
-4. package and dependency metadata;
-5. implementation requirements and traceability matrix;
-6. current history and release notes;
-7. current code, architecture, public API, documentation, and release-readiness reviews;
-8. unit, integration, simulator/replay, compatibility, HIL, performance, and conformance evidence as applicable;
-9. LPDS-017 `ai_contract.yaml` and lock file;
-10. LPDS-018 bench contract or template when applicable;
-11. LPDS-019 inventory, vectors, traces, matrices, and summary;
-12. generated API reference documentation and API manifest;
-13. README, guides, examples, scripts, and GitHub Pages source/build evidence;
-14. known-risks register;
-15. release manifest, checksums, SBOM, and provenance evidence when required by LPDS-005 or LPDS-011;
-16. supported Python, operating-system, transport, device-model, and firmware matrix.
-
-Missing mandatory input shall be recorded as a finding. The review shall not infer a PASS from the absence of evidence.
-
----
-
-## 8. Required review outputs
-
-The `review/` directory shall contain, directly or through equivalent current files:
-
-```text
-review/
-├── README.md
-├── vYY.RR_code_review.md
-├── vYY.RR_architecture_review.md
-├── vYY.RR_api_review.md
-├── vYY.RR_documentation_review.md
-├── vYY.RR_release_readiness.md
-├── requirement_traceability.md
-├── known_risks.md
-├── findings.yaml
-└── review_evidence_manifest.json
-```
-
-For phase-and-gate versions, the project may use `vYY.PP.GG_*` names.
-
-The release-readiness review shall include:
-
-- reviewed archive filename and checksum;
-- reviewed source revision;
-- review date;
-- reviewers and approver;
-- scope and claimed release status;
-- environment used for verification;
-- checklist result by review domain;
-- findings and corrective actions;
-- quality score;
-- blocking-rule evaluation;
-- residual risks and waivers;
-- final verdict;
-- conditions for promotion or re-review.
-
----
-
-## 9. Finding severity
-
-Only the following severities shall be used.
-
-### 9.1 CRITICAL
-
-A Critical finding is a defect or omission that can cause one or more of:
-
-- unsafe physical behaviour or failure to reach the declared safe state;
-- uncontrolled voltage, current, power, temperature, motion, pressure, relay topology, or other hazardous output;
-- false PASS or materially incorrect measurement/result reporting;
-- silent command corruption, wrong channel/resource control, or incorrect unit conversion;
-- loss or corruption of user, calibration, or device data;
-- security compromise, secret disclosure, malicious dependency execution, or release tampering;
-- indefinite blocking in a safety-relevant or release-essential operation;
-- package identity or provenance failure that prevents determining what code was released;
-- a known production defect with no reliable containment.
-
-Any open Critical finding blocks every production or conditional-production verdict.
-
-### 9.2 MAJOR
-
-A Major finding is a defect or omission that materially affects:
-
-- supported functionality;
-- public API compatibility;
-- protocol correctness or recovery;
-- deterministic installation or operation;
-- required test or HIL evidence;
-- LPDS-019 conformance;
-- AI-contract correctness;
-- documentation needed for safe or correct use;
-- packaging, version consistency, or release reproducibility;
-- maintainability in a way likely to cause production defects.
-
-A Major finding normally blocks production release. A waiver may be considered only under Section 22.
-
-### 9.3 MINOR
-
-A Minor finding has limited impact and does not prevent safe, correct use of the supported release scope. Examples include localized documentation defects, non-blocking code-quality issues, incomplete optional examples, or low-risk maintainability improvements.
-
-Minor findings shall have an owner and disposition but may remain open at release when the residual risk is accepted.
-
-### 9.4 NOTE
-
-A Note is an observation, recommendation, or future improvement without a current nonconformity.
-
----
-
-## 10. Checklist item statuses
-
-Every checklist item shall use one of:
-
-- **PASS** — requirement verified with sufficient evidence;
-- **FAIL** — requirement not met;
-- **PARTIAL** — some required aspects are met but the requirement is incomplete;
-- **NOT VERIFIED** — evidence was not available or verification was not performed;
-- **NOT APPLICABLE** — requirement does not apply and a reason is recorded;
-- **WAIVED** — requirement is not met but an authorized, time-bounded waiver has been approved.
-
-`NOT VERIFIED` shall not be treated as PASS. For a mandatory production criterion, `NOT VERIFIED` is release-blocking.
-
----
-
-## 11. Review Domain A — Release identity and package integrity
+## 6. Review Domain A — Release identity and package integrity
 
 Verify that:
 
@@ -342,7 +129,7 @@ Verify that:
 
 ---
 
-## 12. Review Domain B — Installation, import, and basic operation
+## 7. Review Domain B — Installation, import, and basic operation
 
 Verify on each claimed primary platform, or on the approved compatibility matrix, that:
 
@@ -363,7 +150,7 @@ Verify on each claimed primary platform, or on the approved compatibility matrix
 
 ---
 
-## 13. Review Domain C — Architecture and maintainability
+## 8. Review Domain C — Architecture and maintainability
 
 Verify that:
 
@@ -388,7 +175,7 @@ Verify that:
 
 ---
 
-## 14. Review Domain D — Public API
+## 9. Review Domain D — Public API
 
 Verify that:
 
@@ -412,7 +199,7 @@ Verify that:
 
 ---
 
-## 15. Review Domain E — Transport and protocol correctness
+## 10. Review Domain E — Transport and protocol correctness
 
 Verify that:
 
@@ -436,7 +223,7 @@ Verify that:
 
 ---
 
-## 16. Review Domain F — Errors, diagnostics, retry, and recovery
+## 11. Review Domain F — Errors, diagnostics, retry, and recovery
 
 Verify that:
 
@@ -459,13 +246,13 @@ Verify that:
 
 ---
 
-## 17. Review Domain G — Safety, limits, and resource ownership
+## 12. Review Domain G — Safety, limits, and resource ownership
 
 Verify that:
 
 1. safety responsibilities are assigned to driver, adapter, device, fixture, bench, test plan, or operator layers;
 2. connection and initialization do not unintentionally energize outputs or alter hazardous state;
-3. safe limits are configurable, validated, documented, and represented in LPDS-017/LPDS-018 where applicable;
+3. safe limits are configurable, validated, documented, and represented in LPDS-017 where applicable;
 4. unsafe ranges, channel combinations, relay paths, or command sequences are prohibited or explicitly controlled;
 5. manual actions and physical reconfiguration are visible and cannot be silently assumed;
 6. normal teardown reaches the declared safe state;
@@ -483,7 +270,7 @@ Verify that:
 
 ---
 
-## 18. Review Domain H — Configuration, state, and resources
+## 13. Review Domain H — Configuration, state, and resources
 
 Verify that:
 
@@ -498,11 +285,11 @@ Verify that:
 9. configuration changes that require reconnect are enforced or documented;
 10. calibration, correction, or persistent device files are versioned and protected from accidental overwrite where applicable;
 11. multi-session and multi-channel isolation are tested where supported;
-12. resource conflict rules align with LPDS-017 and LPDS-018.
+12. resource conflict rules align with LPDS-017 where applicable.
 
 ---
 
-## 19. Review Domain I — Tests, coverage, and evidence
+## 14. Review Domain I — Tests, coverage, and evidence
 
 Verify that the applicable test layers are present and current:
 
@@ -541,7 +328,7 @@ For test quality, verify that:
 
 ---
 
-## 20. Review Domain J — Hardware qualification, performance, and compatibility
+## 15. Review Domain J — Hardware qualification, performance, and compatibility
 
 Verify, as applicable, that:
 
@@ -560,11 +347,11 @@ Verify, as applicable, that:
 13. deprecation and migration policy is documented;
 14. known compatibility limitations are reflected consistently across documentation and contracts.
 
-A driver that controls real hardware shall not receive an unconditional production verdict solely from simulator evidence unless its released scope explicitly excludes physical-device support.
+A driver that controls real hardware shouldn't be called `stable` on simulator evidence alone, unless its documented scope explicitly excludes physical-device support.
 
 ---
 
-## 21. Review Domain K — AI contracts and traceability
+## 16. Review Domain K — AI contracts and traceability
 
 Verify that:
 
@@ -580,17 +367,15 @@ Verify that:
 10. verification objectives have usable pass/fail oracles;
 11. protocol intent aligns with LPDS-019 vectors;
 12. safety rules align with implementation and documentation;
-13. LPDS-018 template or deployed bench contract is present when required;
-14. bench topology, shared resources, signal graph, preferred measurement sources, scheduling, and global safety are not incorrectly invented inside the single-driver contract;
-15. requirement traceability links requirements to code, tests, documentation, contracts, protocol evidence, hardware evidence, review findings, and history;
-16. no requirement is marked complete without implementation and test evidence;
+13. requirement traceability links requirements to code, tests, documentation, contracts, protocol evidence, and hardware evidence, where a project chooses to track this;
+14. no requirement is marked complete without implementation and test evidence;
 17. deferred and not-applicable requirements have reasons and owners where appropriate.
 
 **Blocking examples:** stale AI contract describes nonexistent method, wrong safety semantics, invalid lock, missing protocol vector mapping, traceability claims hardware-tested without hardware evidence.
 
 ---
 
-## 22. Review Domain L — Documentation, examples, scripts, and GitHub Pages
+## 17. Review Domain L — Documentation, examples, scripts, and GitHub Pages
 
 Verify that:
 
@@ -616,7 +401,7 @@ Verify that:
 
 ---
 
-## 23. Review Domain M — Security, dependencies, and release provenance
+## 18. Review Domain M — Security, dependencies, and release provenance
 
 Verify that:
 
@@ -639,466 +424,48 @@ Verify that:
 
 ---
 
-## 24. Code-review method
+## 19. What Good Evidence Looks Like
 
-The code review shall:
+"Tests passed" isn't evidence on its own — a test report, the environment it ran in, and what it actually covered is. When you check something off, prefer something reproducible (a command, a test file, a log) over a bare assertion. Distinguish static read-through from actually running the code, and simulator results from real-hardware results — both are useful, but they prove different things.
 
-1. identify all changed files and symbols;
-2. determine behavioural impact, not only textual diff size;
-3. trace each changed public behaviour to tests and documentation;
-4. inspect neighbouring code affected by shared state, inheritance, helpers, configuration, or transport changes;
-5. verify typing and documentation for public interfaces;
-6. review all exception swallowing, broad catches, retries, waits, loops, threads, locks, callbacks, and cleanup paths;
-7. review numeric conversion, units, rounding, limits, enum mapping, channel indexing, masks, framing, and parsing;
-8. review file, network, serial, VISA, USB, CAN, Modbus, SDK, and subprocess boundaries as applicable;
-9. search for hard-coded resources, credentials, unsafe defaults, TODO/FIXME markers, disabled tests, debug prints, and unreachable code;
-10. verify that corrections include regression tests;
-11. record file-specific findings with severity, evidence, correction, and residual risk.
-
-A code review that only reports style or test totals is insufficient for production readiness.
+When reading a diff, look past line count at behavioral impact: does a changed public method still have matching tests and docs? Are exception handling, retries, and cleanup paths still correct? Are units, channel indexing, and numeric conversions still right? A quick scan for hard-coded resources, leftover `TODO`s, debug prints, or disabled tests catches a lot cheaply.
 
 ---
 
-## 25. Evidence quality rules
+## 20. Doing the Review
 
-Evidence used for PASS shall be:
+For a solo driver, walking through the domain checklists above (§11-23) against the actual code and running the test suite is the review — no separate workflow needed. For something with more at stake (a breaking change, a safety-relevant fix, preparing to call the driver `stable` for the first time), it's worth doing methodically:
 
-- attributable to the exact release candidate;
-- dated or otherwise identifiable;
-- reproducible by documented command or workflow;
-- sufficiently complete to support the conclusion;
-- stored at a stable path or referenced by checksum;
-- sanitized of secrets;
-- consistent with other release records.
-
-Evidence shall distinguish:
-
-- static inspection;
-- simulated execution;
-- protocol-boundary conformance;
-- real-device execution;
-- independent physical verification.
-
-A statement such as “tests passed” without test reports, environment, version, and scope is not sufficient production evidence.
+1. Build and install in a clean environment; confirm the package imports with no automation framework present.
+2. Run the automated suite (unit, simulator, LPDS-019 conformance, and real-hardware tests if available) and look at what actually ran versus what was skipped.
+3. Read through the changed code and anything it touches.
+4. Check that the public API, the AI contract (if published), and the documentation still agree with each other.
+5. Note what you found and fixed, and what's still open, somewhere visible (CHANGELOG, issue tracker, or `review/` notes if you keep them).
 
 ---
 
-## 26. Scoring model
+## 21. Checklist Summary
 
-### 26.1 Domain weights
+Before calling a driver `stable` (LPDS-001 §9), you should be able to say yes to each of these:
 
-| Domain | Weight |
-|---|---:|
-| A. Release identity and package integrity | 8 |
-| B. Installation, import, and basic operation | 7 |
-| C. Architecture and maintainability | 8 |
-| D. Public API | 9 |
-| E. Transport and protocol correctness | 10 |
-| F. Errors, diagnostics, retry, and recovery | 8 |
-| G. Safety, limits, and resource ownership | 10 |
-| H. Configuration, state, and resources | 6 |
-| I. Tests, coverage, and evidence | 10 |
-| J. Hardware qualification, performance, and compatibility | 7 |
-| K. AI contracts and traceability | 6 |
-| L. Documentation, examples, scripts, and GitHub Pages | 6 |
-| M. Security, dependencies, and release provenance | 5 |
-| **Total** | **100** |
+1. Does the package build, install, and import cleanly with no automation framework installed?
+2. Is the public API (LPDS-002) intentional, typed, documented, and stable?
+3. Are transport and protocol operations correct and finitely bounded?
+4. Are malformed responses, timeouts, device errors, and disconnects handled, with recovery reaching a documented state?
+5. Are safe initialization, limits, teardown, and resource ownership defined and verified?
+6. Do the applicable test layers (unit, simulator, LPDS-019 conformance, and — for `stable` — real hardware) pass?
+7. If published, does the AI Driver Contract (LPDS-017) match the actual API and behavior?
+8. Are README, examples, and docs current and consistent with the code?
+9. Are dependencies, secrets, and licenses handled reasonably (no committed credentials, no undocumented binaries)?
+10. If an adapter exists for this driver, has its translation correctness been reviewed separately, under its own checklist?
 
-### 26.2 Item scoring
-
-Each applicable checklist item shall be scored:
-
-- PASS = 1.0;
-- PARTIAL = 0.5;
-- FAIL = 0.0;
-- NOT VERIFIED = 0.0;
-- WAIVED = 0.5 maximum unless the approver assigns a lower value;
-- NOT APPLICABLE = removed from that domain’s denominator.
-
-For each domain:
-
-```text
-Domain achievement = obtained applicable item points / maximum applicable item points
-Weighted domain score = domain achievement × domain weight
-```
-
-Overall score:
-
-```text
-Production readiness score = sum of weighted domain scores
-Normalized score = production readiness score / 10
-```
-
-Example: 94 points equals 9.4/10.
-
-### 26.3 Score interpretation
-
-| Score | Interpretation |
-|---:|---|
-| 9.5–10.0 | Production-grade with strong evidence and low residual risk |
-| 9.0–9.49 | Production-ready when all blocking rules pass |
-| 8.0–8.99 | Release candidate; further correction or evidence required |
-| 7.0–7.99 | Development quality; material gaps remain |
-| Below 7.0 | Not suitable for release review |
-
-The score is informative. The verdict shall be determined by both score and blocking rules.
+A "not yet" on any of these isn't a blocker — it's something to note in the README per LPDS-001 §32, and the honest reason the driver's status is `wip` or `untested` rather than `stable`.
 
 ---
 
-## 27. Mandatory release-blocking rules
+## 22. Goal
 
-A production release shall be blocked when any of the following applies:
-
-1. an open Critical finding exists;
-2. an open Major finding affects safety, correctness, protocol behaviour, error reporting, data integrity, security, public API compatibility, or release identity;
-3. the release score is below 9.0/10;
-4. any of Domains D, E, F, G, or I scores below 85%;
-5. any other applicable domain scores below 70%;
-6. the final archive differs from the reviewed archive;
-7. clean installation, Python import, or basic workflow fails;
-8. mandatory tests fail or mandatory evidence is NOT VERIFIED;
-9. LPDS-019 acceptance fails for supported device-facing public methods;
-10. a driver claiming physical-device production support lacks representative HIL evidence;
-11. safe initialization, teardown, abort, or recovery is absent or unverified for controllable hazardous state;
-12. public API, AI contract, documentation, examples, and release version materially disagree;
-13. the package includes secrets or uncontrolled private bench data;
-14. a breaking public API change lacks approved migration and release classification;
-15. required history, review, traceability, known-risks, or release evidence is missing;
-16. checksums or provenance do not identify the exact artifact proposed for release.
-
----
-
-## 28. Waiver rules
-
-A waiver shall not be used for:
-
-- an open Critical finding;
-- a known unsafe state or missing emergency containment;
-- false PASS or materially wrong result reporting;
-- known protocol corruption affecting supported operations;
-- committed secrets or active critical security exposure;
-- inability to identify the released code;
-- mandatory LPDS-019 failure for a supported public method;
-- absent HIL evidence when unconditional physical-device production support is claimed.
-
-A Major finding may be waived only when all of the following are true:
-
-1. the affected feature or environment is clearly excluded from the supported release scope;
-2. safe and correct use of the supported scope is not affected;
-3. the limitation is prominent in README, documentation, AI contract, compatibility matrix, and release notes;
-4. a reliable containment or feature-disable mechanism exists;
-5. a risk owner and release approver accept the residual risk;
-6. the waiver has an expiry version or date;
-7. a correction plan and tracking reference exist.
-
-Every waiver shall identify the exact requirement, finding, scope, rationale, mitigation, owner, approver, expiry, and re-review trigger.
-
----
-
-## 29. Production-readiness verdicts
-
-Only the following final verdicts are permitted.
-
-### 29.1 APPROVED FOR PRODUCTION
-
-Permitted only when:
-
-- all mandatory blocking rules pass;
-- score is at least 9.0/10;
-- no open Critical finding exists;
-- no unwaived blocking Major finding exists;
-- the claimed support scope is fully evidenced;
-- the exact archive is approved.
-
-### 29.2 APPROVED WITH RESTRICTED SCOPE
-
-Permitted only when:
-
-- all supported-scope blocking rules pass;
-- exclusions are technically enforced or unmistakably documented;
-- no Critical finding exists;
-- no safety, false-result, protocol-corruption, security, or release-identity defect is waived;
-- every waiver meets Section 28;
-- score is at least 9.0/10 for the supported scope.
-
-The verdict shall state the exact permitted models, firmware, transports, operating systems, features, and hardware profile.
-
-### 29.3 RETURN TO DEVELOPMENT
-
-Required when:
-
-- one or more blocking rules fail;
-- evidence is incomplete;
-- score is below 9.0/10;
-- mandatory corrections are feasible within the project;
-- the candidate may be reconsidered after correction and re-review.
-
-### 29.4 REJECTED AS RELEASE BASELINE
-
-Used when the submitted package is structurally, technically, or evidentially unsuitable as the basis of a production release and requires substantial rework or replacement.
-
-### 29.5 REVIEW INVALID
-
-Used when the exact candidate cannot be identified, the evidence belongs to different code, the archive changes during review, or the review cannot establish a trustworthy basis for a verdict.
-
----
-
-## 30. Required review workflow
-
-### Step 1 — Freeze candidate
-
-- identify archive, source revision, version, and checksum;
-- prohibit candidate mutation during review;
-- record claimed support scope.
-
-### Step 2 — Inventory
-
-- list package files;
-- list public API methods;
-- list capabilities, transports, models, firmware, dependencies, and examples;
-- identify mandatory and conditional LPDS requirements.
-
-### Step 3 — Reproduce build and install
-
-- create a clean environment;
-- build and install package artifacts;
-- import in Python;
-- generate API reference documentation and API manifest.
-
-### Step 4 — Execute automated validation
-
-- run static, unit, integration, simulator/replay, pytest-based acceptance, compatibility, and LPDS-019 suites;
-- capture versions and result evidence;
-- review skips and exclusions.
-
-### Step 5 — Execute hardware validation
-
-- apply approved LPDS-018 bench profile;
-- record identity, firmware, transport, fixture, safety limits, startup state, and cleanup state;
-- execute representative and risk-based workflows;
-- preserve evidence.
-
-### Step 6 — Perform source and architecture review
-
-- inspect changed and affected code;
-- verify state, resource, timeout, error, retry, recovery, concurrency, and cleanup behaviour;
-- confirm regression tests for corrected defects.
-
-### Step 7 — Review API and contracts
-
-- compare driver class, generated API reference documentation, API manifest, examples, LPDS-017, and LPDS-019 inventory;
-- validate signatures, return types, protocol mapping, risks, errors, and states.
-
-### Step 8 — Review documentation and package
-
-- verify README, guides, examples, scripts, GitHub Pages, history, release notes, manifests, security files, and package layout;
-- run representative example scripts from outside the repository working directory.
-
-### Step 9 — Classify findings
-
-- assign severity and checklist domain;
-- record evidence, impact, required correction, owner, and residual risk;
-- identify blockers.
-
-### Step 10 — Correct and re-test
-
-- implement corrections;
-- add regression tests;
-- regenerate invalidated evidence;
-- rebuild and re-freeze the archive;
-- re-review changed and affected areas.
-
-### Step 11 — Score and decide
-
-- calculate domain and total scores;
-- evaluate all blocking rules;
-- document waivers and restricted scope;
-- issue one permitted verdict.
-
-### Step 12 — Promote exact artifact
-
-- verify final checksum;
-- sign or publish provenance where required;
-- ensure the promoted artifact is byte-identical to the approved artifact;
-- preserve the final review in the release.
-
----
-
-## 31. Minimum release-readiness report template
-
-```markdown
-# <driver> Production Readiness Review
-
-## Candidate
-- Archive:
-- SHA-256:
-- Source revision:
-- Driver version:
-- Review date:
-- Reviewer:
-- Approver:
-- Claimed support scope:
-
-## Environment
-- Operating system:
-- Python:
-- Adapter (if applicable):
-- Transport/runtime:
-- Simulator:
-- Device model/serial/firmware:
-- Bench profile:
-
-## Verification performed
-- Build/install:
-- Unit tests:
-- Integration tests:
-- Acceptance tests:
-- LPDS-019:
-- HIL:
-- Performance/soak/concurrency:
-- Documentation/GitHub Pages:
-- Example scripts:
-- Security/release integrity:
-
-## Domain scores
-| Domain | Weight | Achievement | Weighted score | Status |
-|---|---:|---:|---:|---|
-
-## Findings
-| ID | Severity | Domain | Finding | Evidence | Required correction | Status |
-|---|---|---|---|---|---|---|
-
-## Blocking-rule evaluation
-| Rule | Result | Evidence or reason |
-|---|---|---|
-
-## Residual risks and waivers
-
-## Final score
-- Points: __ / 100
-- Normalized: __ / 10
-
-## Verdict
-APPROVED FOR PRODUCTION / APPROVED WITH RESTRICTED SCOPE / RETURN TO DEVELOPMENT / REJECTED AS RELEASE BASELINE / REVIEW INVALID
-
-## Conditions and next actions
-```
-
----
-
-## 32. Machine-readable findings
-
-`review/findings.yaml` should use equivalent information to:
-
-```yaml
-review:
-  document_id: LPDS-010
-  specification_version: "1.0"
-  driver: example_driver
-  release_version: "26.01"
-  archive: example_driver_v26.01.zip
-  archive_sha256: "..."
-  source_revision: "..."
-
-findings:
-  - id: LPDS010-REV-001
-    severity: MAJOR
-    domain: E
-    requirement: LPDS-019 Section 15
-    title: Missing outbound protocol evidence
-    evidence:
-      - review/evidence/conformance_summary.md
-    impact: Device-facing method behaviour is not proven.
-    required_correction: Add and execute the mandatory protocol vector.
-    owner: implementation-owner
-    status: OPEN
-    residual_risk: HIGH
-    waiver: null
-
-score:
-  points: 0
-  normalized: 0.0
-
-verdict: RETURN_TO_DEVELOPMENT
-```
-
-Machine-readable findings shall not replace the human-readable review.
-
----
-
-## 33. Review consistency checks
-
-Before issuing the verdict, verify that:
-
-1. test totals agree across reports and review text;
-2. release versions agree across all artifacts;
-3. the public method count agrees across generated API reference documentation, API manifest, LPDS-017, and LPDS-019 inventory;
-4. supported model, firmware, transport, and Python claims agree;
-5. HIL claims match recorded device evidence;
-6. exclusions and known limitations appear consistently;
-7. every PASS has evidence;
-8. every FAIL, PARTIAL, NOT VERIFIED, or WAIVED item appears in findings or risk records;
-9. every corrected Major or Critical finding has re-test evidence;
-10. the reviewed checksum matches the final release archive.
-
-Any unexplained inconsistency shall be classified at least Major when it affects release truth, supported scope, safety, API, or evidence validity.
-
----
-
-## 34. Review checklist summary
-
-A reviewer shall be able to answer **yes, with evidence** to all applicable questions before approving production release:
-
-1. Is the exact release archive identified and immutable during review?
-2. Does it contain the correct stable root and mandatory LPDS structure?
-3. Are release versions consistent across every artifact?
-4. Can the package be cleanly built, installed, imported, and documented?
-5. Is the architecture layered and maintainable?
-6. Is the driver's public API (per LPDS-002) intentional, stable, documented, and usable?
-7. Are transport and protocol operations correct and finitely bounded?
-8. Are malformed responses, timeouts, device errors, and disconnects handled correctly?
-9. Does recovery restore a documented usable state?
-10. Are safe initialization, limits, teardown, abort, and resource ownership defined and verified?
-11. Are all applicable test layers present, passing, reproducible, and tied to this release?
-12. Does LPDS-019 pass for every supported device-facing public method?
-13. Is representative real-device evidence available for the claimed production scope?
-14. Are performance, soak, and concurrency risks addressed where applicable?
-15. Does LPDS-017 exactly match the released API and behaviour?
-16. Is LPDS-018 bench information correct where integration is claimed?
-17. Is requirement traceability complete and evidence-based?
-18. Are at least ten safe, complete, runnable examples provided or formally excepted?
-19. Are README, guides, scripts, generated API reference documentation, GitHub Pages, history, and release notes current?
-20. Are dependencies, secrets, licences, security risks, SBOM, checksums, and provenance controlled?
-21. Are all findings classified, owned, and dispositioned?
-22. Are no Critical or blocking Major findings open?
-23. Is the score at least 9.0/10 and are critical domains above threshold?
-24. Is the final promoted artifact byte-identical to the reviewed artifact?
-25. If an adapter exists for this driver, has its translation correctness been reviewed separately, under its own checklist? (optional — only applicable when an adapter is part of the release)
-
----
-
-## 35. Minimum definition of done
-
-LPDS-010 is complete for a release when:
-
-- the exact release candidate and checksum are recorded;
-- all applicable review domains are evaluated;
-- all mandatory build, install, test, conformance, and hardware evidence is reviewed;
-- source, architecture, API, safety, documentation, package, AI-contract, compatibility, and security reviews are complete;
-- findings are recorded with severity, evidence, owner, correction, and residual risk;
-- corrections have regression evidence;
-- score and domain thresholds are calculated;
-- blocking rules are evaluated explicitly;
-- waivers, restricted scope, and known risks are documented;
-- one permitted verdict is issued;
-- the promoted artifact matches the approved artifact;
-- final review records are included in `review/` and referenced by history and release notes.
-
----
-
-## 36. Goal
-
-Provide a repeatable, evidence-based decision that an LPDS Python instrument driver is safe, correct, supportable, reproducible, and sufficiently validated for its explicitly declared production scope.
+Provide a repeatable way to check that an LPDS Python instrument driver is safe, correct, and sufficiently validated for the status it claims — usable by one person reviewing their own work, without assuming a dedicated reviewer, a scoring rubric, or a formal approval chain.
 
 The review shall make it impossible to confuse a promising development package, a simulator-only implementation, or a partially documented driver with a production-approved release.
 
@@ -1120,14 +487,7 @@ Device-specific projects may prefix the driver name while preserving a stable nu
 
 ## Appendix B — Recommended correction priority
 
-| Priority | Meaning |
-|---|---|
-| P0 | Immediate safety, correctness, security, data-integrity, or false-result correction |
-| P1 | Required before production release |
-| P2 | Required for full LPDS conformance but may be planned after a restricted-scope release only when waiver rules permit |
-| P3 | Maintainability or usability improvement |
-
-Priority does not replace severity. A Critical finding remains release-blocking regardless of planned correction date.
+A simple two-tier split is usually enough: fix-before-`stable` (anything touching safety, correctness, or a silently wrong result), and everything else (track it, fix it when convenient). Use a finer-grained priority scheme only if a project's actual issue volume justifies it.
 
 ---
 
