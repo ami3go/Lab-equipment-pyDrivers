@@ -96,7 +96,6 @@ A project conforming to LPDS-009 shall also apply the relevant requirements from
 - **LPDS-010 — Review Checklist**, when approved;
 - **LPDS-011 — Release Process**, when approved;
 - **LPDS-017 — AI Driver Contract Specification**;
-- **LPDS-018 — AI Test Bench Contract Specification**;
 - **LPDS-019 — Driver Call and Protocol Conformance Test Specification**;
 - **LPDS-020 — Driver Implementation Lifecycle**;
 - the device-specific implementation requirements;
@@ -1052,27 +1051,9 @@ An unexpected connection failure during an available HIL run should normally be 
 
 ---
 
-## 19. Multi-Driver and Bench Tests
+## 19. Tests Using More Than One Driver
 
-Where a test uses multiple LPDS drivers, the bench shall be described by LPDS-018 or an approved equivalent.
-
-The test plan shall define:
-
-- physical topology;
-- signal producers and consumers;
-- relay and multiplexer paths;
-- shared resources;
-- resource ownership;
-- connection ordering;
-- safe startup sequence;
-- stabilization rules;
-- measurement source preference;
-- pass/fail oracles;
-- cleanup ordering;
-- emergency shutdown;
-- parallel-execution constraints.
-
-Multi-driver tests shall not assume a connection or wiring path that is absent from the authoritative bench contract.
+A test that coordinates more than one driver instance (for example, a source and a meter) should document, briefly, what it assumes: which resources are shared, connection/cleanup order, and any safety-relevant startup or shutdown sequence. Keep this documentation next to the test rather than assuming it's obvious — a multi-driver test that silently depends on wiring or ordering nobody wrote down is a common source of confusing failures.
 
 ---
 
@@ -1800,164 +1781,33 @@ A phase shall not be approved when mandatory tests for that phase remain NOT RUN
 
 ---
 
-## 36. Release Qualification Levels
+## 36. How This Maps to Driver Status
 
-A driver revision shall declare one of the following qualification levels or an approved equivalent:
-
-### Q0 — Buildable
-
-- package imports;
-- test harness exists;
-- no hardware claim.
-
-### Q1 — Unit Validated
-
-- applicable unit tests pass;
-- coverage threshold for implemented scope passes;
-- no simulator or hardware claim.
-
-### Q2 — Software Integrated
-
-- unit, integration, replay, and simulator tests pass;
-- adapter conformance tests pass for each shipped adapter;
-- no hardware claim.
-
-### Q3 — Protocol Conformant
-
-- Q2 passed;
-- applicable LPDS-019 conformance requirements pass using approved simulator and/or protocol observation;
-- physical-function accuracy is not implied.
-
-### Q4 — Representative Hardware Validated
-
-- Q3 passed;
-- representative supported hardware tests pass;
-- tested models, firmware, transports, fixtures, and limits are identified.
-
-### Q5 — HIL Qualified
-
-- full approved HIL matrix for the declared release scope passes;
-- physical-function, safety, recovery, and applicable performance evidence exists;
-- remaining exclusions are approved.
-
-The README, release notes, GitHub Pages, and AI contract limitations shall state the actual qualification level.
+LPDS-001 §9 defines the driver's overall status label (`wip`/`untested`/`stable`). In testing terms: `wip` means whatever tests exist pass, with no claim about completeness; `untested` means unit tests pass and LPDS-019 conformance passes against the simulator, but nothing has run against real hardware yet; `stable` means representative real-hardware tests pass too, for the models/transports the driver actually claims to support. There's no separate testing-specific qualification scale to keep in sync with that one — use the same three labels everywhere (README, AI contract, release notes).
 
 ---
 
-## 37. Acceptance Criteria
+## 37. Checklist
 
-A released driver passes LPDS-009 only when all applicable conditions are satisfied:
+**Unit and simulator layer**
+- [ ] The full software-only test suite runs without touching real hardware (and CI, if any, enforces that).
+- [ ] Unit tests cover core logic, parsing, validation, state transitions, and error paths, each with a deterministic, independent oracle (not "the same code that produced the expectation").
+- [ ] Transport-adapter tests cover success, failure, timeout, and cleanup.
+- [ ] A replay fixture or simulator exists, its known limitations are documented, and it doesn't leak state between tests.
+- [ ] LPDS-019 conformance passes against the simulator, with any exclusions documented and reasoned.
+- [ ] Each shipped framework adapter has its own thin conformance tests verifying translation only.
 
-1. the mandatory test directories and runners exist;
-2. software-only tests execute without uncontrolled hardware;
-3. unit tests cover core logic, parsing, validation, state, errors, and safety functions;
-4. protocol serialization and parsing have independent deterministic oracles;
-5. transport adapters are tested for success, failure, timeout, and cleanup;
-6. replay or approved simulator validation exists;
-7. simulator limitations are documented;
-8. adapter conformance tests exercise the driver's public API for each shipped adapter;
-9. LPDS-019 conformance passes or approved exclusions are documented;
-10. HIL status is explicit and truthful;
-11. applicable real-device tests pass for the claimed qualification level;
-12. safety setup, limits, teardown, and fault cleanup are verified;
-13. documented recoverable errors have recovery tests;
-14. corrected deterministic defects have regression tests;
-15. compatibility tests support the declared compatibility matrix;
-16. applicable performance, stress, soak, and concurrency tests pass;
-17. default coverage thresholds or approved stricter thresholds pass;
-18. no mandatory test is unexplained SKIP, unapproved EXCLUDED, QUARANTINED without release acceptance, or NOT RUN;
-19. known flaky tests are corrected or formally controlled;
-20. evidence records environment, versions, profiles, and hardware identity where applicable;
-21. results are traceable to requirements and release review;
-22. the release documentation states the actual validation and HIL status;
-23. all test evidence corresponds to the exact candidate revision;
-24. no Critical testing or safety finding remains open;
-25. Major findings are corrected or formally accepted by release authority.
+**Hardware-in-the-loop, when you have the hardware**
+- [ ] HIL tests are opt-in (disabled by default), require explicit resource/safety configuration, and never silently fall back to the simulator.
+- [ ] Device/firmware/transport identity is recorded; safe startup and teardown are verified, including after a failure.
+- [ ] A corrected, reproducible defect gets a regression test.
 
----
+**General**
+- [ ] Every test run is bounded by a finite timeout.
+- [ ] Test data and evidence don't contain secrets.
+- [ ] The driver's stated status (LPDS-001 §9) matches what's actually been tested — don't claim `stable` on simulator-only evidence.
 
-## 38. Failure Conditions
-
-LPDS-009 shall fail when any applicable condition occurs:
-
-- tests require undocumented execution order;
-- software-only CI unexpectedly accesses hardware;
-- a mandatory test can block indefinitely;
-- a test passes only because no exception was raised;
-- protocol expectations are generated by the same unverified code under test without an independent oracle;
-- simulator state leaks between tests unintentionally;
-- a simulator pass is described as proof of physical accuracy or safety;
-- HIL silently falls back to simulation;
-- HIL runs without required safety limits or resource profile;
-- teardown failure is hidden;
-- an unexpected hardware connection failure is incorrectly reported as a harmless skip;
-- a corrected deterministic defect has no regression test without justification;
-- coverage is below threshold;
-- safety-critical uncovered branches lack approved justification;
-- mandatory adapter conformance behaviour is untested for a shipped adapter;
-- LPDS-019 conformance is omitted without approval;
-- required hardware qualification is claimed without evidence;
-- test evidence belongs to a different revision;
-- required environment or device identity evidence is missing;
-- retries conceal flaky tests;
-- mandatory tests are NOT RUN;
-- exclusions are unapproved or generic;
-- test data contains secrets;
-- release documentation overstates test status;
-- unresolved Critical findings remain.
-
----
-
-## 39. Minimum Definition of Done
-
-LPDS-009 is complete for a released driver when:
-
-- the project has a layered test strategy;
-- unit, protocol, transport, replay or simulator, integration, and adapter conformance tests exist for the supported scope;
-- LPDS-019 conformance is integrated;
-- real-device status is explicit;
-- HIL tests are safe, controlled, and evidenced when applicable;
-- corrected defects have regression coverage;
-- coverage thresholds pass;
-- compatibility and applicable performance requirements pass;
-- all mandatory results are traceable;
-- no mandatory test remains NOT RUN;
-- the release review records the final qualification level and residual risks.
-
----
-
-## 40. Review Checklist
-
-1. Are all applicable test layers present?
-2. Can the complete software-only suite run without hardware?
-3. Are unit tests deterministic and meaningful?
-4. Are command builders and response parsers tested independently?
-5. Are transport timeout, disconnect, and cleanup paths tested?
-6. Is replay or an approved simulator available?
-7. Does the simulator operate at the real device-facing boundary?
-8. Are simulator limitations explicit?
-9. Is each shipped adapter covered by adapter conformance tests that verify translation only?
-10. Is LPDS-019 conformance present and current?
-11. Are all supported public API methods represented in the conformance inventory?
-12. Is HIL disabled by default?
-13. Does HIL require explicit safety and resource configuration?
-14. Is silent HIL-to-simulator fallback prevented?
-15. Are real device, firmware, transport, fixture, and reference-equipment identities recorded?
-16. Are safe startup and teardown verified?
-17. Are negative, boundary, timeout, and malformed-response cases covered?
-18. Is recovery verified after recoverable faults?
-19. Does every corrected deterministic defect have a regression test?
-20. Do coverage thresholds pass?
-21. Are safety-critical uncovered branches justified?
-22. Are skipped, excluded, quarantined, and not-run tests reviewed?
-23. Are retries preserving first-failure evidence?
-24. Are flaky tests controlled rather than hidden?
-25. Does the compatibility matrix match test evidence?
-26. Are performance, stress, soak, and concurrency tests present where required?
-27. Is every test run bounded by finite timeouts?
-28. Are test data and evidence sanitized?
-29. Are results traceable to requirements and the exact release revision?
-30. Does release documentation state the true qualification level?
+Coverage thresholds, formal flaky-test tracking, and performance/soak/concurrency suites are worth adding for a driver under active multi-contributor development; they're not expected from day one.
 
 ---
 
@@ -2144,4 +1994,4 @@ Version 1.0 establishes:
 - regression-test requirements for corrected defects;
 - flaky-test and retry policy;
 - test evidence, status, traceability, qualification levels, acceptance criteria, and release failure conditions;
-- formal integration with LPDS-017, LPDS-018, LPDS-019, LPDS-005, LPDS-001, and the LPDS implementation lifecycle.
+- formal integration with LPDS-017, LPDS-019, LPDS-005, LPDS-001, and the LPDS implementation lifecycle.
