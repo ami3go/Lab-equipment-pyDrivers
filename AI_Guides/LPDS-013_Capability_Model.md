@@ -1757,98 +1757,22 @@ The application shall not infer safety from the absence of risk metadata. Missin
 
 ---
 
-## 40. Acceptance Criteria
+## 40. Checklist
 
-A driver passes LPDS-013 only when:
+- [ ] The capability model loads without connecting to hardware (static discovery).
+- [ ] Every capability has a stable, unique ID; standard IDs (Appendix A) are used where one applies, rather than inventing a vendor-specific one.
+- [ ] Every executable capability binds to an actual exported public API method with a matching signature.
+- [ ] Physical values declare units; return values are plain, serializable types.
+- [ ] Support state (does the driver implement this) and current availability (can it run right now) are distinguishable — an unsupported capability and a temporarily-unavailable one aren't reported the same way.
+- [ ] Live/configured discovery never performs an undeclared hazardous side effect, and doesn't require physical hardware to use static discovery.
+- [ ] High-risk capabilities carry risk, precondition, and cleanup metadata.
+- [ ] The model is JSON-serializable.
 
-1. the mandatory capability artifacts exist;
-2. the capability model validates against the declared schema;
-3. capability IDs are unique and stable;
-4. all executable capabilities bind to exported public API methods;
-5. all bindings have compatible signatures;
-6. all arguments declare required type and constraint metadata;
-7. all physical values declare units and quantities where applicable;
-8. all return values declare framework-agnostic, serializable types;
-9. support state and current availability are distinguishable;
-10. static discovery works without a connected device;
-11. configured and live discovery clearly identify their source;
-12. unknown values are explicit and are not reported as supported facts;
-13. live discovery performs no undeclared hazardous side effect;
-14. channel- or module-dependent limits are represented correctly;
-15. safety-relevant capabilities contain risk, precondition, and cleanup metadata;
-16. capability query and exact lookup operations work deterministically;
-17. capability output is JSON serializable;
-18. model freshness and device identity are traceable;
-19. deprecated and aliased capabilities are declared;
-20. validation evidence is generated for the release.
+If you generate evidence for this (a `capability_validation.json`, a binding matrix), that's useful for a driver with many capabilities or external consumers relying on the model — it's not expected as a baseline artifact for every driver.
 
 ---
 
-## 41. Failure Conditions
-
-LPDS-013 shall fail when:
-
-- a generic application must inspect source code to discover a supported standard capability;
-- a capability exists only as an undocumented method name;
-- an executable capability binds to a missing or private method;
-- capability IDs collide or change without semantic reason;
-- argument ranges, units, types, or required status are materially ambiguous;
-- a physical value has no unit and is not explicitly dimensionless;
-- a driver reports unsupported or unverified functionality as supported;
-- current unavailability is incorrectly reported as permanent lack of support;
-- live discovery performs an undeclared state-changing or hazardous operation;
-- device-derived capability data is reused after identity change without invalidation;
-- a channel-dependent limit is presented as global when channels differ;
-- high-risk operations lack confirmation or safety metadata;
-- a required cleanup action is omitted;
-- the model cannot be serialized to JSON;
-- validation cannot trace an executable capability to a public API method;
-- static discovery requires physical hardware;
-- breaking capability changes are released without lifecycle metadata updates.
-
----
-
-## 42. Evidence and Reporting
-
-Each capability validation run shall produce:
-
-```text
-results/capability_model/<driver>/<timestamp>/
-├── capability_model_static.json
-├── capability_model_effective.json          # when live/configured discovery runs
-├── capability_validation.json
-├── capability_binding_matrix.csv
-├── capability_diff.json                     # when compared with previous release
-├── environment.json
-├── device_identity.json                     # when connected
-├── output.xml
-├── log.html
-├── report.html
-└── capability_summary.md
-```
-
-The binding matrix shall contain at least:
-
-| Field | Requirement |
-|---|---|
-| Capability ID | Stable machine identifier. |
-| Display name | Human-readable name. |
-| Standard/vendor | Classification. |
-| Support state | Effective support status. |
-| Availability | Current availability. |
-| Public API method | Bound implementation target. |
-| Adapter binding(s) | Bound framework adapter name(s), if any. |
-| Arguments valid | PASS/FAIL. |
-| Returns valid | PASS/FAIL. |
-| Risk metadata valid | PASS/FAIL. |
-| Resource references valid | PASS/FAIL. |
-| Live verified | PASS/FAIL/SKIP/N/A. |
-| Result | PASS/FAIL/SKIP. |
-| Evidence | Report or trace reference. |
-
----
-
-## 43. Change Control
+## 41. Change Control
 
 Whenever a public feature, method, supported model, option, channel, range, unit, return schema, side effect, safety rule, dependency, or availability rule changes, the same driver revision shall update:
 
@@ -1869,7 +1793,7 @@ A capability-affecting code change without the corresponding LPDS-013 update sha
 
 ---
 
-## 44. Integration with Other LPDS Specifications
+## 42. Integration with Other LPDS Specifications
 
 ### 44.1 LPDS-002 — Public API
 
@@ -1918,11 +1842,7 @@ The two specifications shall agree on:
 
 LPDS-017 may contain planning and verification semantics that are intentionally outside LPDS-013.
 
-### 44.9 LPDS-018 — AI Test Bench Contract
-
-LPDS-018 may aggregate LPDS-013 capabilities and resources from multiple installed drivers to determine what the bench can perform at runtime.
-
-### 44.10 LPDS-019 — Driver Call and Protocol Conformance
+### 44.9 LPDS-019 — Driver Call and Protocol Conformance
 
 LPDS-019 shall verify that the public API method bound to an executable capability can be called and produces the declared protocol behavior — and, where a framework adapter is present, that the adapter correctly translates a framework-level call into that same method invocation.
 
@@ -1930,7 +1850,7 @@ LPDS-013 validates **what is discoverable and how it is described**. LPDS-019 va
 
 ---
 
-## 45. Implementation Lifecycle Placement
+## 43. Implementation Lifecycle Placement
 
 LPDS-013 shall be maintained through every implementation phase:
 
@@ -1969,60 +1889,9 @@ LPDS-013 shall be maintained through every implementation phase:
 
 ---
 
-## 46. Review Checklist
-
-1. Can the model be loaded without connecting hardware?
-2. Does every capability have a stable ID?
-3. Are standard capabilities used instead of unnecessary vendor-specific IDs?
-4. Is support distinct from current availability?
-5. Are unsupported and unknown states represented honestly?
-6. Does every executable capability bind to an exported public API method?
-7. Do method signatures match argument metadata?
-8. Are aliases and deprecated methods declared?
-9. Do all physical values have units and quantities?
-10. Are ranges, defaults, resolution, and enumerations structured?
-11. Are channel- and module-dependent limits represented?
-12. Are return values framework-agnostic, serializable, and documented?
-13. Are preconditions, postconditions, and side effects explicit?
-14. Are timing, timeout, stabilization, retry, and idempotency defined?
-15. Are resources and conflicts usable by an orchestrator?
-16. Are high-risk and critical capabilities marked and protected?
-17. Does live discovery avoid hazardous state changes?
-18. Is provenance retained for static, configured, and live fields?
-19. Are cache invalidation and freshness rules correct?
-20. Do exact lookup and structured filtering work?
-21. Is JSON serialization lossless?
-22. Does validation detect stale or broken method bindings?
-23. Does the capability diff identify breaking changes?
-24. Does LPDS-017 agree with LPDS-013?
-25. Does LPDS-019 cover executable capability bindings?
-
 ---
 
-## 47. Minimum Definition of Done
-
-LPDS-013 implementation for a driver is complete when:
-
-- the static capability model exists and validates;
-- the mandatory discovery interfaces are callable through the driver's public Python API;
-- all implemented standard functions have stable capability IDs;
-- all executable capabilities are bound to public API methods;
-- all required metadata is complete;
-- static discovery works offline;
-- configured and live discovery work where applicable;
-- live discovery is safe and traceable;
-- runtime availability is represented;
-- channel and module variations are represented;
-- safety and cleanup metadata are complete;
-- capability validation and binding tests pass;
-- required evidence files are generated;
-- the capability model is included in README/GitHub Pages documentation;
-- `history/` and `review/` contain the revision evidence;
-- no mandatory capability-model verification remains NOT RUN without an approved reason.
-
----
-
-## 48. Goal
+## 44. Goal
 
 Provide a stable, safe, machine-readable model that allows generic applications to discover, present, validate, and invoke LPDS driver features without device-specific source-code knowledge or hard-coded method-name mappings.
 
@@ -2334,4 +2203,4 @@ Version 1.0 establishes:
 - a public Python discovery interface, with optional, informational framework adapter bindings;
 - safe live discovery rules;
 - deterministic validation and binding verification;
-- explicit integration boundaries with LPDS-017, LPDS-018, and LPDS-019.
+- explicit integration boundaries with LPDS-017 and LPDS-019.
