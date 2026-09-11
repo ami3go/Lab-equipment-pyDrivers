@@ -15,11 +15,10 @@ This revision:
 
 - preserves the public ZIP name `<driver_name>_v<year>.<release>.zip`;
 - preserves the stable internal root folder `<driver_name>/`;
-- requires current `history/`, `review/`, `examples/`, `scripts/`, `guide/`, `README.md`, and GitHub Pages content in every release;
-- requires at least ten complete plain-Python driver examples;
+- recommends `history/`, `review/`, `examples/`, `scripts/`, `guide/`, `README.md`, and GitHub Pages content, growing in as a driver matures past its first release;
+- asks for a handful of complete plain-Python driver examples;
 - defines the authoritative `src/`-layout Python driver package, with any framework adapter kept in a separate, optional, clearly bounded directory;
 - incorporates LPDS-017 AI Driver Contract files;
-- provides an LPDS-018 bench-contract template location without embedding a real bench definition in the driver;
 - incorporates the complete LPDS-019 call and protocol conformance structure, runners, and evidence requirements;
 - distinguishes repository content, distributable package content, runtime results, and release evidence;
 - defines mandatory structure validation, exclusions, release-integrity records, and acceptance criteria.
@@ -61,14 +60,13 @@ LPDS-005 covers:
 - optional framework adapter layout;
 - transport, protocol, model, configuration, and diagnostics locations;
 - LPDS-017 AI Driver Contract locations;
-- LPDS-018 template location;
 - LPDS-019 conformance-test locations;
 - unit, conformance, integration, replay, HIL, compatibility, and performance test locations;
 - examples and example runners;
 - setup, test, conformance, documentation, and release scripts;
 - history and review evidence;
 - README, guides, generated API reference, and GitHub Pages sources;
-- release manifests, checksums, SBOM, and release exclusions;
+- release manifest and (once needed) checksums/SBOM;
 - structure validation and minimum release acceptance.
 
 ### 2.2 Out of scope
@@ -102,7 +100,6 @@ A conforming project shall follow the applicable approved revisions of:
 - **LPDS-004 — Transport Layer Specification**;
 - **LPDS-008 — Logging and Evidence Standard**;
 - **LPDS-017 — AI Driver Contract Specification**;
-- **LPDS-018 — AI Test Bench Contract Specification**;
 - **LPDS-019 — Driver Call and Protocol Conformance Test Specification**;
 - **LPDS-020 — Driver Implementation Lifecycle**;
 - the device-specific implementation requirement;
@@ -301,8 +298,7 @@ New LPDS driver projects shall use the following layout. Device-specific files m
 │       └── tests/
 ├── ai/
 │   ├── ai_contract.yaml
-│   ├── ai_contract.lock
-│   └── system_ai_contract.template.yaml
+│   └── ai_contract.lock
 ├── config/
 │   ├── schema.json
 │   ├── schema.lock
@@ -471,31 +467,27 @@ Requirements:
 
 - `hp34401a/driver.py` (or a historical `library.py`) remains the sole authoritative public API surface;
 - protocol and device logic shall not be duplicated between the legacy layout and any newly added adapter;
-- both the legacy driver layout and any adapter shall be included in tests, manifests, SBOM, compatibility checks, and release review;
-- the architecture review shall document the exception, the consumer-compatibility risk, and a target migration milestone to the `src/`-layout defined in §6.1.
+- both the legacy driver layout and any adapter shall be included in tests, manifests, and compatibility checks;
+- document the reason for the exception and a target migration milestone to the `src/`-layout defined in §6.1, somewhere visible (README, CHANGELOG, or an issue).
 
 ---
 
-## 7. Mandatory package-content baseline
+## 7. Package-content baseline
 
-Every public release and reviewable gate package shall contain current content for the following requirements.
+A driver release should contain current content for the following. Everything except the first two rows is something to grow into as the driver matures past its first `wip` release (LPDS-001 §9), not a day-one requirement.
 
-| Requirement | Mandatory location | Release rule |
+| Requirement | Location | What "current" means |
 |---|---|---|
 | Stable installable driver package | `src/<driver_name>/` | Imports without contacting hardware or requiring any automation framework |
-| Change description | `history/` | Current revision has a complete chronological entry |
-| Review evidence | `review/` | Current delta is reviewed; findings and residual risks are recorded |
-| At least ten examples | `examples/` | Ten or more numbered, runnable plain-Python example scripts |
-| Example and test runners | `scripts/` | Supported Windows and Linux execution paths exist |
+| Call/protocol conformance | `tests/conformance/` | LPDS-019 inventory and vectors are present, at least against a simulator |
+| A handful of examples | `examples/` | A few numbered, runnable plain-Python example scripts covering the main use cases |
+| Change description | `history/` or `CHANGELOG.md` | Current revision has an entry |
 | Current GitHub README | `README.md` | Matches package version, API, support, setup, and validation status |
-| Current GitHub Pages | `docs/`, `mkdocs.yml`, `pages.yml` | Strict build passes and navigation is current |
-| PyCharm and driver development guide | `guide/pycharm_setup.md` | Reproducible setup, run, debug, and troubleshooting steps |
-| AI Driver Contract | `ai/ai_contract.yaml`, `ai_contract.lock` | Matches the released public API |
-| Call/protocol conformance | `tests/conformance/` | LPDS-019 inventory, vectors, exclusions, and oracles are present |
+| AI Driver Contract | `ai/ai_contract.yaml`, `ai_contract.lock` | Matches the released public API, if published |
 | Deterministic offline validation | `transports/simulator.py` or `tests/replay/` | Normal and applicable failure behavior is testable without hardware |
-| Requirements traceability | `review/requirement_traceability.md` | Requirements map to implementation, tests, docs, reviews, and evidence |
-| Release integrity | `release/` | Manifest, SBOM, and checksums match final artifacts |
-| AI coding guidance | `AGENTS.md` | Defines commands, sources of truth, constraints, and prohibited changes |
+| Release manifest | `release/` | Manifest matches final artifacts; checksums/SBOM once you need them (§19) |
+
+Documentation site generation (GitHub Pages), a dedicated `guide/` and `review/` folder, and an `AGENTS.md` for AI coding tools are all genuinely useful additions for a driver with multiple contributors or external users — add them when that's true of your driver, not as a precondition for a first release.
 
 A public release is non-conformant when any mandatory path is missing, stale, contradictory, or represented only by an unexplained placeholder.
 
@@ -577,8 +569,6 @@ The release build shall fail when:
 - the lock file is invalid;
 - contract and package versions disagree.
 
-`ai/system_ai_contract.template.yaml` may provide an LPDS-018 integration template. It shall not claim actual bench wiring, DUT topology, or real laboratory resource assignments. The deployed bench contract belongs in the bench/test-system repository.
-
 ---
 
 ## 10. Test structure requirements
@@ -642,7 +632,7 @@ HIL tests shall:
 
 ## 11. Example requirements
 
-Every public release and every Gate 4 or Gate 5 package shall include at least **ten complete, runnable plain-Python example scripts**.
+A driver's `examples/` folder should include a handful of complete, runnable plain-Python scripts — enough to show connecting, a representative read, and a representative write/action, at minimum. There's no fixed minimum count; cover what's actually useful for the device rather than padding to hit a number.
 
 Each example shall:
 
@@ -657,24 +647,11 @@ Each example shall:
 - leave the device in the documented safe state;
 - be runnable by the generic example scripts (for example `python examples/03_read_measurement.py`).
 
-The minimum example set should cover, where applicable:
+Good candidates, in rough priority order: connection and identity, a primary write/set operation, a query/read/measurement operation, validation failure and error handling, and a realistic end-to-end workflow. Channel selection, simulator use, and multi-session use are worth adding once those capabilities exist.
 
-1. package/import verification;
-2. connection and identity;
-3. status, health, or error queue;
-4. basic configuration;
-5. primary write/set operation;
-6. query/read/measurement operation;
-7. channel or resource selection;
-8. validation failure and error handling;
-9. recovery and safe cleanup;
-10. realistic end-to-end workflow;
-11. simulator use;
-12. multiple sessions or bench integration.
+`examples/README.md` should index each example with its purpose, mode (simulator/hardware), prerequisites, and expected result.
 
-`examples/README.md` shall index every example with its purpose, mode, prerequisites, required variables, expected result, and exact PowerShell, Batch where supported, and Linux shell command.
-
-An adapter may additionally provide its own framework-specific example set (for example shell scripts under `adapters/cli/examples/`). Adapter examples supplement, but do not count toward, the ten-example minimum defined above, which applies to the plain-Python driver examples in `examples/`.
+An adapter may additionally provide its own framework-specific example set (for example shell scripts under `adapters/cli/examples/`), separate from the plain-Python driver examples in `examples/`.
 
 ---
 
@@ -908,34 +885,17 @@ HIL workflows shall use protected configuration and exclusive resource locking. 
 
 ---
 
-## 19. Release-integrity requirements
+## 19. Release manifest
 
-Every approved public release shall include or generate:
+A release should include:
 
 ```text
 release/release_manifest.json
-release/sbom.spdx.json
-release/SHA256SUMS
 ```
 
-The manifest shall identify at least:
+identifying at least the driver name and version, ZIP filename, internal root, Python distribution/import names, supported Python version range, source revision, and LPDS-017/LPDS-019 status.
 
-- driver name and version;
-- ZIP filename;
-- internal root;
-- Python distribution and import names;
-- supported Python version range (and, for each included adapter, its supported framework version range);
-- source revision;
-- build environment;
-- included history and review records;
-- LPDS-017 validation status;
-- LPDS-019 validation and execution status;
-- HIL status;
-- generated artifact hashes.
-
-The SBOM shall cover packaged runtime dependencies and bundled upstream packages. Checksums shall be generated from the final immutable artifacts, not an earlier build.
-
-A release provenance or attestation should be generated when supported by the hosting platform.
+An SBOM (`release/sbom.spdx.json`) and checksums (`release/SHA256SUMS`) are useful once a driver has external consumers who need supply-chain guarantees — add them at that point rather than by default. If you do generate checksums, generate them from the final immutable artifacts, not an earlier build.
 
 ---
 
@@ -1007,23 +967,20 @@ Update:
 Complete:
 
 - unit, conformance, integration, replay, and applicable HIL tests, plus adapter translation tests for any adapter included in this revision;
-- complete LPDS-019 suite execution where prerequisites exist;
-- ten or more verified examples;
-- README, guides, generated API reference, and GitHub Pages;
-- traceability and known risks.
+- LPDS-019 suite execution where prerequisites exist;
+- verified examples covering the driver's main use cases;
+- README and guides current.
 
 ### Gate 5 — Review and release
 
 Complete:
 
-- code, architecture, API, documentation, conformance, compatibility, security, and release reviews;
-- correction of Critical findings;
-- resolution or formal acceptance of Major findings;
+- a self-review against LPDS-010, correcting anything that stands out;
 - current history and changelog;
-- final manifests, SBOM, checksums, and package validation;
+- final release manifest and package validation;
 - correctly named ZIP with one stable root.
 
-No phase shall pass Gate 5 without current LPDS-019 conformance status and evidence. A prerequisite-based SKIP or approved EXCLUDED item shall remain visible and shall not be presented as PASS.
+A skipped or excluded conformance item stays visible in the evidence rather than being silently presented as passing.
 
 ---
 
@@ -1087,113 +1044,29 @@ The final archive shall be validated from the packaged bytes, not only from the 
 
 ---
 
-## 24. Minimum release acceptance criteria
+## 24. Checklist
 
-A public driver release passes LPDS-005 only when:
+**Identity and layout**
+- [ ] ZIP name follows `<driver_name>_v<year>.<release>.zip`, with exactly one stable, version-independent `<driver_name>/` root.
+- [ ] The project uses the `src/<driver_name>/` layout, with any adapter clearly separated under `adapters/`.
+- [ ] `driver.py` (or equivalent) is the authoritative public API surface, importable and testable without any automation framework.
 
-1. the ZIP name follows `<driver_name>_v<year>.<release>.zip`;
-2. the ZIP contains exactly one stable `<driver_name>/` root;
-3. the canonical source, AI, configuration, test, conformance, example, script, history, review, guide, documentation, and release-integrity content exists;
-4. the package imports without connecting to hardware or requiring any automation framework;
-5. the driver package's public API can be imported and enumerated using plain Python alone; when an adapter is included, that adapter can load and expose the same public API to its target framework;
-6. LPDS-017 matches the released public API;
-7. LPDS-019 inventory and vector coverage are complete or approved exclusions are documented;
-8. applicable mandatory LPDS-019 vectors pass and evidence is traceable;
-9. at least ten current runnable plain-Python examples are included;
-10. example and test runners work on supported Windows and Linux environments;
-11. README, guides, GitHub Pages, generated API reference, examples, and code describe the same revision;
-12. history describes every delivered change;
-13. review evidence covers every delivered change;
-14. no Critical review finding remains open;
-15. Major findings are corrected or formally accepted with owner, risk, and limitation;
-16. version identity is consistent across package, documentation, contracts, manifests, and archive;
-17. prohibited runtime files and secrets are absent;
-18. release manifest, SBOM, and checksums match the final package;
-19. installation from the built distribution and execution of the declared basic workflow are reproducible;
-20. hardware-validation status is explicit and is not overstated.
+**Content**
+- [ ] The package imports without connecting to hardware or requiring an automation framework.
+- [ ] LPDS-017 contract (if published) matches the released public API.
+- [ ] LPDS-019 inventory and vector coverage are complete, or exclusions are documented, for at least the simulator profile.
+- [ ] A handful of runnable examples exist and can be run as documented.
+- [ ] README, examples, and code describe the same revision; version identity is consistent across them.
+- [ ] No secrets, personal resource assignments, or stray local result files are included in the package.
+- [ ] Any included adapter depends only on the driver's public API, with no device logic of its own.
+- [ ] Installation from the built distribution and the declared basic workflow work in a clean environment.
+- [ ] Hardware-validation status is stated honestly (LPDS-001 §9) — `untested` is a fine thing to say.
+
+History, review folders, GitHub Pages, checksums/SBOM, and requirements traceability are good things to have as a driver matures (§7) — their absence in an early release isn't a failure, it's just early.
 
 ---
 
-## 25. Failure conditions
-
-LPDS-005 conformance shall fail when any of the following applies:
-
-- incorrect ZIP naming;
-- multiple ZIP top-level entries;
-- versioned internal root;
-- missing mandatory path;
-- fewer than ten valid examples without an approved scope exception;
-- examples cannot be run through packaged scripts;
-- stale or contradictory README, guide, docs, examples, AI contract, or version metadata;
-- missing current history or review record;
-- a current change is absent from review evidence;
-- package import contacts hardware, requires an automation framework, or fails in a clean environment;
-- LPDS-017 files are missing or do not match the API;
-- LPDS-019 conformance structure, inventory, vectors, exclusions, or runner is missing;
-- a public method is omitted from inventory;
-- a device-facing method lacks a protocol vector and approved exclusion;
-- required test or conformance evidence is represented as passed when not executed;
-- GitHub Pages cannot build;
-- required setup guidance is missing;
-- secrets, active locks, personal resource assignments, caches, local results, or nested ZIPs are included;
-- release manifest, SBOM, or checksums are missing or inconsistent;
-- unresolved Critical findings remain;
-- an undocumented breaking API change is included;
-- an adapter contains device logic that duplicates or diverges from the driver's public API.
-
----
-
-## 26. Minimum definition of done
-
-LPDS-005 is complete for a driver revision when:
-
-- the required repository and package structure exists;
-- naming and version identity are consistent;
-- the driver package is importable and its public API is discoverable using plain Python alone; any included adapter is separately importable and depends only on the driver's public API;
-- LPDS-017 files are complete and synchronized;
-- LPDS-019 conformance artifacts and runners are complete;
-- examples, scripts, guides, README, generated API reference, and GitHub Pages are current;
-- history, review, traceability, and risk records are current;
-- software-only tests and required conformance checks pass;
-- hardware status is explicitly recorded;
-- release-integrity artifacts are generated from the final package;
-- the final ZIP validates with one stable internal root;
-- all acceptance criteria in Section 24 pass.
-
----
-
-## 27. Review checklist
-
-1. Is the driver identifier stable and valid?
-2. Does the public ZIP follow the approved naming pattern?
-3. Does the ZIP contain exactly one `<driver_name>/` root?
-4. Is the internal root version-independent?
-5. Does the project use the canonical `src/<driver_name>/` driver-package layout, with any adapter clearly separated under `adapters/`?
-6. Is `driver.py` the authoritative public driver API surface, importable and testable without any automation framework?
-7. Are core, protocol, and transport responsibilities separated?
-8. Does package import avoid hardware activity and automation-framework dependency?
-9. Are LPDS-017 contract and lock files present and synchronized?
-10. Is the LPDS-018 file clearly a template rather than a claimed bench definition?
-11. Is the complete LPDS-019 conformance tree present?
-12. Are all public methods inventoried?
-13. Does every device-facing method have a vector or approved exclusion?
-14. Are at least ten numbered runnable plain-Python examples present?
-15. Can each example be run with the packaged scripts?
-16. Are Windows and Linux paths supported?
-17. Are history entries complete for the current delta?
-18. Does review evidence cover every current change?
-19. Are requirement traceability and known risks current?
-20. Are README, guides, GitHub Pages, generated API reference, examples, and code consistent?
-21. Are HIL tests isolated and explicitly enabled?
-22. Are runtime outputs and secrets excluded?
-23. Do manifest, SBOM, and checksums match the final artifacts?
-24. Are Critical findings closed and Major findings resolved or formally accepted?
-25. Can the package be clean-installed and its basic workflow reproduced?
-26. Does any included adapter depend only on the driver's public API, with no device logic of its own?
-
----
-
-## 28. Goal
+## 25. Goal
 
 Provide one predictable, reviewable, replaceable, installable, testable, documented, and evidence-backed package structure for every LPDS Python instrument driver.
 
@@ -1214,4 +1087,8 @@ Version 1.3:
 - requires conformance inventory and vector validation during release building;
 - requires LPDS-019 status in README, manifests, Gate 5 review, and release acceptance;
 - clarifies the boundary between repository files, public package content, runtime results, and reviewed release evidence;
-- retains the stable internal root, ten-example minimum, current README/GitHub Pages, PyCharm guide, history, review, AI contract, simulator/replay, governance, compatibility, and release-integrity requirements.
+- retains the stable internal root, current README, AI contract, and simulator/replay requirements.
+
+### Deep trim to solo/small-team scale
+
+Removed LPDS-018 (retired) references and its bench-contract template file. Replaced the fixed ten-example minimum with "a handful, covering the main use cases." Downgraded GitHub Pages, a dedicated PyCharm guide, `AGENTS.md`, requirements-traceability records, SBOM, and checksums from mandatory-for-every-release to "add these as the driver matures" (§7, §19). Consolidated the four overlapping closing sections into one checklist (§24).
