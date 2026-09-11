@@ -1502,26 +1502,7 @@ The AI contract shall not expose secrets.
 
 ---
 
-## 30. Integration with LPDS-018 AI Test Bench Contract
-
-The LPDS-018 test-bench contract shall identify shared transport resources, including:
-
-- VISA resources;
-- USB devices and interfaces;
-- serial ports;
-- network addresses and ports;
-- exclusive locks;
-- USB hubs or network adapters that affect availability;
-- operator connection steps;
-- fixture-owned interfaces;
-- resource conflicts;
-- permitted simulator profiles.
-
-The bench contract shall use stable resource identifiers where possible and shall not assume that operating-system enumeration order is fixed.
-
----
-
-## 31. Integration with LPDS-019 Protocol Conformance
+## 30. Integration with LPDS-019 Protocol Conformance
 
 LPDS-004 shall provide the transport evidence required by LPDS-019.
 
@@ -1541,7 +1522,7 @@ A backend passes transport observation only when the recorded operation proves t
 
 ---
 
-## 32. Security and Safety Requirements
+## 31. Security and Safety Requirements
 
 ### 32.1 Least surprise
 
@@ -1574,7 +1555,7 @@ Protocol traces may contain serial numbers, configuration values, or proprietary
 
 ---
 
-## 33. Performance and Resource Requirements
+## 32. Performance and Resource Requirements
 
 - A driver shall not open and close the transport for every normal command.
 - A transport shall avoid unbounded receive buffers.
@@ -1590,7 +1571,7 @@ Device-specific performance targets belong to the implementation task or perform
 
 ---
 
-## 34. Mandatory Tests
+## 33. Mandatory Tests
 
 Each implemented backend shall provide automated tests for the following categories.
 
@@ -1707,7 +1688,7 @@ USB tests shall include:
 
 ---
 
-## 35. Transport Contract Test Suite
+## 34. Transport Contract Test Suite
 
 Each transport backend shall pass a shared contract suite using the same behavioral test cases.
 
@@ -1730,7 +1711,7 @@ The contract suite should be reusable across driver packages or supplied by a sh
 
 ---
 
-## 36. Test Profiles
+## 35. Test Profiles
 
 The transport tests shall support these profiles where applicable:
 
@@ -1745,7 +1726,7 @@ A test requiring unavailable hardware may be skipped only with a documented prer
 
 ---
 
-## 37. Documentation Requirements
+## 36. Documentation Requirements
 
 Each supported backend shall document:
 
@@ -1771,7 +1752,7 @@ README, GitHub Pages, examples, AI contract, history, and review documents shall
 
 ---
 
-## 38. Lifecycle and Change Control
+## 37. Lifecycle and Change Control
 
 Transport implementation shall follow the LPDS driver implementation lifecycle.
 
@@ -1827,107 +1808,33 @@ Any change to endpoint syntax, default timeout, terminator behavior, retry polic
 
 ---
 
-## 39. Acceptance Criteria
+## 38. Checklist
 
-An LPDS transport implementation passes LPDS-004 only when:
+**Boundary and separation**
+- [ ] The canonical I/O boundary is byte-oriented; device protocol code depends only on the LPDS transport interface, never directly on `pyvisa`/`serial`/`socket`/`usb`.
+- [ ] Protocol logic (command construction, response parsing) is independent from the backend library.
 
-1. device protocol code depends only on the LPDS transport interface and declared capability extensions;
-2. canonical I/O is byte oriented;
-3. all supported backends implement the mandatory lifecycle and I/O contract;
-4. configuration is validated before open;
-5. no operation uses an uncontrolled infinite timeout;
-6. read size is bounded;
-7. transactions are atomic and cannot interleave;
-8. backend exceptions are translated to stable LPDS errors;
-9. transport state remains accurate after open, close, timeout, disconnect, and failed recovery;
-10. no uncertain write is replayed automatically without explicit replay approval;
-11. resource discovery does not silently select among ambiguous devices;
-12. serial DTR and RTS behavior is explicit;
-13. TCP stream fragmentation is handled correctly;
-14. USB device and interface ownership is deterministic and safely released;
-15. traces can prove outbound and inbound transport operations for LPDS-019;
-16. simulator fault injection covers timeout, malformed transfer, partial transfer, and disconnect behavior;
-17. all mandatory shared transport contract tests pass;
-18. supported real backends pass their applicable integration profile;
-19. transport resources, locks, workers, and claimed interfaces are released after close and failed open;
-20. documentation, examples, AI contract, history, and review evidence are current.
+**Timing and reliability**
+- [ ] No operation uses an uncontrolled infinite timeout; every read is bounded by a terminator, length, or maximum size.
+- [ ] Transactions are atomic — write and read stay locked together and can't interleave with another operation.
+- [ ] A write is never automatically replayed after uncertain completion without explicit safe-replay approval; an uncertain outcome is reported as uncertain, not silently retried.
+- [ ] Backend exceptions are translated to the stable LPDS error hierarchy rather than leaking as the only public error contract.
+- [ ] Resources (handles, locks, USB interfaces) are released after both a successful close and a failed open.
 
----
+**Backend-specific correctness**
+- [ ] Resource discovery doesn't silently pick among ambiguous devices; device selection is deterministic.
+- [ ] Serial DTR/RTS behavior is explicit. TCP stream fragmentation is handled (packet boundaries aren't treated as protocol message boundaries; a zero-length receive isn't treated as a valid empty response). Direct-USB interface/kernel-driver ownership is deterministic and released on close.
 
-## 40. Failure Conditions
+**Observability and testing**
+- [ ] A trace observer can prove the actual outbound/inbound bytes for LPDS-019, without exposing secrets.
+- [ ] The simulator/spy transport can inject timeout, malformed-transfer, partial-transfer, and disconnect conditions.
+- [ ] The shared transport contract test suite passes; each supported real backend has at least one physical or loopback integration test.
 
-LPDS-004 shall fail when:
-
-- device protocol code directly calls a backend library without an approved adapter;
-- a backend changes outbound or inbound bytes without declared codec or framing behavior;
-- a read, write, open, or close operation can block indefinitely;
-- a transaction can interleave with another operation;
-- a write is replayed after uncertain completion without explicit safe-replay approval;
-- backend exceptions leak as the only public error contract;
-- `is_open` reports a failed session as healthy;
-- transport configuration changes silently while open;
-- USB selection is ambiguous;
-- serial control lines change without declared policy;
-- TCP packet boundaries are treated as protocol message boundaries;
-- a zero-length TCP receive is treated as a valid empty response;
-- a direct USB interface or kernel driver is not restored or released as documented;
-- failed open leaves handles, locks, workers, or interfaces allocated;
-- trace observation cannot prove the actual transport operation;
-- trace data exposes secrets;
-- unsupported backend features silently behave as successful no-ops;
-- required simulator or backend contract tests are missing;
-- mandatory documentation is not updated with a transport behavior change.
+As elsewhere in this standard, an incomplete item is something to note (LPDS-001 §32), not a hard blocker — a solo driver validated only against a simulator, with real-hardware backend testing still pending, is a normal and legitimate state.
 
 ---
 
-## 41. Review Checklist
-
-1. Is the canonical boundary byte oriented?
-2. Is protocol logic independent from the backend library?
-3. Are state transitions explicit and tested?
-4. Are all timeouts bounded and monotonic?
-5. Is every read bounded by a terminator, length, backend message boundary, and maximum size?
-6. Is transaction locking held across write and read?
-7. Are unsafe retries prohibited?
-8. Are uncertain writes reported accurately?
-9. Are backend exceptions translated to stable errors?
-10. Are resources released after successful close and failed open?
-11. Is discovery separate from connection?
-12. Is device selection deterministic?
-13. Are serial DTR, RTS, and buffer policies explicit?
-14. Does TCP handling respect stream semantics?
-15. Is TLS verification safe by default when used?
-16. Are USB interfaces, endpoints, and kernel-driver policies explicit?
-17. Can a simulator reproduce partial reads, delays, timeouts, and disconnects?
-18. Can a trace observer prove exact outbound and inbound operations?
-19. Are trace payloads bounded and redacted?
-20. Does the implementation pass the shared transport contract suite?
-21. Are LPDS-017, LPDS-018, and LPDS-019 artifacts updated as required?
-22. Are README, GitHub Pages, examples, guide, history, and review files current?
-
----
-
-## 42. Minimum Definition of Done
-
-LPDS-004 implementation is complete for a driver when:
-
-- the base transport interface, data models, and error model are implemented;
-- every declared backend is functional rather than a placeholder;
-- configuration validation is complete;
-- open, close, write, read, transact, and flush behavior is tested;
-- state, timeout, locking, retry, disconnect, and cleanup tests pass;
-- simulator and trace observer are available;
-- LPDS-019 can capture protocol-boundary evidence;
-- at least one approved physical or loopback integration profile passes for each supported backend type;
-- documentation and connection examples are complete;
-- AI contract and bench integration fields are updated;
-- no Critical review findings remain;
-- all Major findings are resolved or formally accepted with mitigation;
-- release evidence is stored in `history/` and `review/`.
-
----
-
-## 43. Goal
+## 39. Goal
 
 Provide one stable, safe, observable, and replaceable communication boundary so that LPDS instrument drivers and their public Python APIs behave consistently across VISA, serial, TCP/IP, direct USB, and deterministic simulator environments, regardless of which framework adapter, if any, is layered on top.
 

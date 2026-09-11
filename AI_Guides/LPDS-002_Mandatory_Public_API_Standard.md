@@ -1181,8 +1181,7 @@ High- and critical-risk methods shall:
 - reject non-finite numeric values;
 - document side effects;
 - define cleanup or safe-state behavior;
-- be included in the LPDS-017 safety rules;
-- be constrained by LPDS-018 bench rules when used in a multi-instrument bench.
+- be included in the LPDS-017 safety rules.
 
 ### 16.3 Dangerous defaults
 
@@ -1405,43 +1404,17 @@ Breaking changes require explicit release notes, migration guidance, contract up
 
 ---
 
-## 22. Mandatory API artifacts
+## 22. API artifacts
 
-Every driver package shall include equivalent artifacts:
+A driver's docstrings (§19) plus its LPDS-017 AI Driver Contract (when published) are the source of truth for its public API — there's no separate mandatory `public_api.yaml`/schema/`compatibility.yaml` artifact to keep in sync with them. Generated API reference documentation (for example via Sphinx or pdoc) is a nice addition once a driver has external users, published through GitHub Pages or similar, but isn't required to call a driver conformant.
 
-```text
-example_driver/
-├── api/
-│   ├── public_api.yaml
-│   ├── public_api.schema.json
-│   └── compatibility.yaml
-├── docs/
-│   ├── api_reference.md
-│   └── api_reference.html
-├── ai/
-│   ├── ai_contract.yaml
-│   └── ai_contract.lock
-├── tests/
-│   ├── api/
-│   │   ├── test_mandatory_api.py
-│   │   ├── test_naming_and_signature.py
-│   │   ├── test_return_type.py
-│   │   └── test_compatibility.py
-│   └── conformance/
-│       └── ...
-├── history/
-│   └── ...
-└── review/
-    └── ...
-```
-
-Generated API reference documentation (for example via Sphinx or pdoc) may be published through GitHub Pages.
+If a project wants a machine-readable method inventory beyond what the AI contract already provides — for tooling that specifically needs it — the schema below is a reasonable shape to use. It's optional.
 
 ---
 
-## 23. `public_api.yaml` minimum schema
+## 23. Optional: machine-readable method inventory schema
 
-Each public method entry shall contain at least:
+Each public method entry, if you choose to maintain one of these:
 
 ```yaml
 api_spec:
@@ -1496,7 +1469,7 @@ methods:
     replacement: null
 ```
 
-The schema shall remain synchronized with generated API documentation, LPDS-017, examples, and the LPDS-019 method inventory.
+If maintained, keep it consistent with the code and, where present, the AI contract and examples — a stale copy is worse than no copy.
 
 ---
 
@@ -1674,18 +1647,7 @@ LPDS-017 shall use LPDS-002 as the source of truth for:
 
 Every public method in the LPDS-002 inventory shall have one corresponding LPDS-017 capability entry or an explicitly documented metadata-only classification.
 
-### 27.2 LPDS-018 — AI Test Bench Contract
-
-LPDS-018 shall reference LPDS-002 canonical method names when defining:
-
-- driver ordering;
-- shared resource use;
-- setup and teardown;
-- safe-state operations;
-- multi-driver workflows;
-- conflict and scheduling rules.
-
-### 27.3 LPDS-019 — Driver Call and Protocol Conformance
+### 27.2 LPDS-019 — Driver Call and Protocol Conformance
 
 LPDS-019 shall verify:
 
@@ -1701,7 +1663,7 @@ LPDS-019 shall verify:
 
 A public API change is incomplete until corresponding LPDS-019 inventory, vectors, tests, and evidence are updated.
 
-### 27.4 Driver implementation lifecycle
+### 27.3 Driver implementation lifecycle
 
 Each lifecycle gate that changes public behavior shall update:
 
@@ -1716,141 +1678,25 @@ Each lifecycle gate that changes public behavior shall update:
 
 ---
 
-## 28. Conformance levels
+## 28. Checklist
 
-### Level 0 — Declaration
+- [ ] Public-API export is explicit (no accidental promotion of helper methods, §6).
+- [ ] All mandatory universal methods (§8) and each declared capability's mandatory method group (§9) are implemented.
+- [ ] Canonical method names are unique, verb-first, and follow the naming rules (§7); aliases and deprecations are declared (§21).
+- [ ] Every public method is fully type-annotated: arguments, defaults, units, return type (§10-11).
+- [ ] Return values are adapter-safe plain data (§11) — no framework-specific or non-serializable objects.
+- [ ] The constructor and module import don't touch hardware.
+- [ ] Connection, timeout, and idempotency behavior match this spec and are covered by tests.
+- [ ] High-risk operations carry explicit risk/safety metadata (§16); a safe-shutdown path exists where persistent hazardous state is possible.
+- [ ] A failed operation raises the documented exception category rather than returning success.
+- [ ] Every device-facing public method has LPDS-019 protocol coverage, or an explicit, documented exclusion.
+- [ ] If an adapter exists, each public method is callable through it too.
 
-- driver package version and instance-sharing policy declared;
-- automatic public-API promotion disabled; public API explicitly registered;
-- public API inventory exists;
-- mandatory universal methods declared.
-
-### Level 1 — Naming and signature
-
-- canonical names follow this standard;
-- registered names are unique;
-- signatures, defaults, types, and units comply;
-- aliases and deprecations are declared.
-
-### Level 2 — Runtime callability
-
-- each supported public method is callable directly from Python, and from any declared adapter;
-- valid arguments convert correctly;
-- return values are adapter-safe (Section 11);
-- expected failures use the required exception categories.
-
-### Level 3 — Semantic behavior
-
-- connection and state behavior matches this specification;
-- idempotency requirements pass;
-- timeouts are bounded;
-- safety and cleanup behavior are confirmed;
-- return schemas remain stable.
-
-### Level 4 — Protocol traceability
-
-- every device-facing method is linked to LPDS-019 protocol evidence;
-- aliases exhibit equivalent protocol behavior;
-- failures and recovery are traceable.
+This isn't a formal gate — it's what "the public API is in good shape" means in practice. Treat gaps as things to note in the driver's README (per LPDS-001 §32), not blockers to fix before anyone can look at the code.
 
 ---
 
-## 29. Acceptance criteria
-
-A driver passes LPDS-002 only when:
-
-1. automatic public-API promotion is disabled;
-2. 100% of exported methods are explicitly declared in the public API inventory;
-3. no private or unintended method is exported;
-4. all mandatory universal methods are implemented;
-5. every declared conditional capability contains its mandatory method group;
-6. canonical method names follow the naming rules;
-7. method names are unique within the registered public API;
-8. all public signatures, defaults, types, units, return types, and dictionary schemas are documented;
-9. all public Python methods are type-annotated;
-10. all public returns are adapter-safe;
-11. constructor and import operations do not access hardware;
-12. connection, timeout, state, and idempotency semantics pass automated tests;
-13. dangerous operations have explicit risk and safety metadata;
-14. aliases and deprecated methods follow compatibility rules;
-15. `public_api.yaml`, generated API documentation, LPDS-017, and LPDS-019 are mutually consistent;
-16. every device-facing public method has LPDS-019 protocol coverage or approved exclusion;
-17. no mandatory API test remains `NOT RUN`.
-
----
-
-## 30. Failure conditions
-
-LPDS-002 shall fail when:
-
-- a helper method is exported accidentally;
-- a public method is missing from the inventory;
-- a mandatory universal method is absent;
-- a declared capability omits a mandatory capability method;
-- two methods collide after adapter-normalization;
-- a method has ambiguous action semantics;
-- a signature changes without compatibility handling;
-- units are ambiguous;
-- a command returns an undocumented or non-serializable object;
-- a query returns a formatted string instead of the documented numeric type;
-- a Boolean state uses inconsistent meaning;
-- a connection is opened during import or construction;
-- a method can block indefinitely;
-- invalid local data is transmitted when it could have been rejected safely;
-- a dangerous default enables or overwrites something;
-- expected driver errors are reported as success;
-- an alias differs from its canonical operation without documentation;
-- a deprecated method is removed before the required window;
-- API metadata and runtime introspection disagree;
-- a device-facing method lacks LPDS-019 coverage and approved exclusion.
-
----
-
-## 31. API review checklist
-
-1. Is automatic public-API promotion disabled?
-2. Are all public methods explicitly registered with metadata?
-3. Are all canonical names verb-first and unambiguous?
-4. Are registered names unique?
-5. Are all universal methods implemented?
-6. Are capability declarations accurate?
-7. Does each capability include its mandatory method group?
-8. Are connection semantics explicit and idempotent where required?
-9. Does the constructor avoid hardware access?
-10. Are arguments named consistently and units explicit?
-11. Are defaults deterministic and safe?
-12. Are all arguments and returns type-annotated?
-13. Are return values adapter-safe?
-14. Are dictionary keys stable and documented?
-15. Are timeout, stabilization, polling, and retries bounded?
-16. Are error categories and recovery actions clear?
-17. Are high-risk operations classified and constrained?
-18. Is safe shutdown provided where persistent hazardous state is possible?
-19. Are aliases equivalent and deprecations visible?
-20. Do generated API docs, `public_api.yaml`, LPDS-017, examples, and LPDS-019 agree?
-21. Is every device-facing method covered by a protocol vector or exclusion?
-22. Are API changes recorded in `history/` and reviewed in `review/`?
-
----
-
-## 32. Minimum definition of done
-
-LPDS-002 implementation for a driver is complete when:
-
-- the mandatory universal API is implemented;
-- all applicable capability groups are implemented;
-- the public method inventory is complete;
-- generated API reference documentation and machine-readable API documentation are produced;
-- API tests pass;
-- the AI Driver Contract is synchronized;
-- call and protocol conformance data are synchronized;
-- examples use only canonical methods unless demonstrating migration;
-- compatibility and deprecation records are current;
-- API review finds no unresolved Critical or Major issue.
-
----
-
-## 33. Goal
+## 29. Goal
 
 Provide one predictable, safe, machine-verifiable public Python interface across all LPDS instrument drivers while preserving the device-specific capabilities necessary for real laboratory automation.
 
@@ -1914,7 +1760,6 @@ Migration aliases shall be deprecated, tested, and removed only through the chan
 This specification is designed to align with:
 
 - LPDS-017 — AI Driver Contract Specification;
-- LPDS-018 — AI Test Bench Contract Specification;
 - LPDS-019 — Driver Call and Protocol Conformance Test Specification;
 - LPDS-020 — Driver Implementation Lifecycle;
 - Python packaging and API-design conventions covering public/private naming, type hints (PEP 484), docstring conventions (PEP 257), deprecation warnings, and public API stability practices.

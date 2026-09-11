@@ -43,17 +43,17 @@ on top of a driver, never a requirement of the driver itself.
 | [LPDS-009](LPDS-009_Testing_Standard.md) | Testing Standard | Unit / hardware-in-the-loop / adapter-conformance test layers |
 | [LPDS-010](LPDS-010_Driver_Review_Checklist.md) | Driver Review Checklist | Mandatory pre-release review checklist |
 | [LPDS-011](LPDS-011_Release_Process.md) | Release Process | Versioning, packaging, changelog, release steps |
-| [LPDS-012](LPDS-012_Automation_and_GUI_Integration_Specification.md) | Automation and GUI Integration Specification | Integrating drivers into GUIs, dashboards, and automation consumers |
 | [LPDS-013](LPDS-013_Capability_Model.md) | Capability Model | Self-describing capability taxonomy and identifiers |
 | [LPDS-014](LPDS-014_Driver_Configuration_Model_Specification.md) | Driver Configuration Model Specification | Connection parameters, calibration, limits schema |
 | [LPDS-015](LPDS-015_Plugin_and_Adapter_Architecture.md) | Plugin and Adapter Architecture | Entry-points based discovery for drivers and, separately, adapters |
 | [LPDS-017](LPDS-017_AI_Driver_Contract.md) | AI Driver Contract | `ai_contract.yaml`: machine-readable, adapter-independent driver description |
-| [LPDS-018](LPDS-018_AI_Test_Bench_Contract.md) | AI Test Bench Contract | Multi-driver bench topology and system-level contract |
 | [LPDS-019](LPDS-019_Driver_Conformance_Test_Specification.md) | Driver Conformance Test Specification | Call/protocol conformance vectors for a driver's public API, with a worked CLI adapter example |
 | [LPDS-020](LPDS-020_Driver_Implementation_Lifecycle.md) | Driver Implementation Lifecycle | Phase/gate implementation and review process |
 
-(Numbering intentionally skips 016 and starts renumbering-free at 017 to preserve
-traceability with this series' origin document set.)
+(Numbering skips 012, 016, and 018. 012 and 018 were retired — they specified a
+generic operator GUI and a multi-instrument bench-contract system, neither of which
+this hub or any driver in it currently has any use for. If that changes, they can be
+reintroduced from git history. 016 was never used upstream.)
 
 ## Provenance
 

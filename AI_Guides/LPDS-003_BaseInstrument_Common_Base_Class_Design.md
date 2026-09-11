@@ -72,7 +72,6 @@ LPDS-003 does not define:
 - VISA, serial, TCP/IP, USB, CAN, Modbus, HTTP, GPIO, or vendor-SDK implementation details governed by LPDS-004;
 - the complete exception catalogue and message standard governed by LPDS-007;
 - device-specific protocol commands, responses, limits, capabilities, or state machines;
-- bench wiring, shared hardware resources, or global emergency sequences governed by LPDS-018;
 - package-tree placement beyond the shared-component requirements necessary to use this base class;
 - physical measurement accuracy or calibration correctness;
 - the full logging and evidence schema governed by LPDS-008.
@@ -96,7 +95,6 @@ Implementations conforming to LPDS-003 shall also follow the applicable requirem
 - LPDS-013 — Capability Model;
 - LPDS-014 — Driver Configuration Model Specification;
 - LPDS-017 — AI Driver Contract Specification;
-- LPDS-018 — AI Test Bench Contract Specification;
 - LPDS-019 — Driver Call and Protocol Conformance Test Specification;
 - LPDS-020 — Driver Implementation Lifecycle.
 
@@ -443,7 +441,7 @@ It shall not select an arbitrary session.
 
 ### 13.1 Required infrastructure states
 
-LPDS-003 is the sole normative source for the connection/session state enum used across the platform. LPDS-001, LPDS-002, and LPDS-012 each expose a reduced, presentation-specific projection of this enum (for example LPDS-002's lowercase public `state` field); those projections shall map onto the states below rather than defining independent state names.
+LPDS-003 is the sole normative source for the connection/session state enum used across the platform. LPDS-001 and LPDS-002 each expose a reduced, presentation-specific projection of this enum (for example LPDS-002's lowercase public `state` field); those projections shall map onto the states below rather than defining independent state names.
 
 Each session shall use the following base-level states:
 
@@ -619,10 +617,6 @@ Cleanup order shall be deterministic. Last-in-first-out is recommended for acqui
 ### 16.4 Verification
 
 Where the device supports read-back or status verification, the concrete safe-state hook should verify the resulting state. "Command sent" shall not be represented as "safe state verified" unless no stronger oracle is available and this limitation is explicit.
-
-### 16.5 Bench responsibility
-
-A bench-wide emergency sequence remains governed by LPDS-018. The driver safe-state hook shall expose enough behaviour to participate in that sequence.
 
 ---
 
@@ -1110,8 +1104,7 @@ Different sessions may execute concurrently only when:
 
 - the concrete driver declares support;
 - transports and shared SDK resources are thread-safe or externally serialized;
-- no shared physical resource conflict exists;
-- LPDS-018 does not prohibit parallel operation.
+- no shared physical resource conflict exists.
 
 ### 27.5 Lock timeout
 
@@ -1524,117 +1517,29 @@ Machine-readable diagnostics, capabilities, and metadata shall carry schema vers
 
 ---
 
-## 37. Acceptance Criteria
+## 37. Checklist
 
-An implementation passes LPDS-003 only when:
+For the shared `lpds-core` package itself:
 
-1. the base class can be imported and constructed without hardware access;
-2. concrete drivers expose their public API explicitly, not through blanket framework reflection;
-3. connection lifecycle is deterministic and finite;
-4. partial connection failures release all acquired resources;
-5. repeated connect and disconnect behaviour is defined and tested;
-6. every session has explicit state and legal transitions are enforced;
-7. operation locking prevents unsafe concurrent access;
-8. all blocking paths use finite deadlines or an approved documented exception;
-9. retries occur only for explicitly retry-safe operations;
-10. recovery does not conceal the original failed operation;
-11. safe-state and cleanup continue as far as practical after individual failures;
-12. errors preserve category, context, and causal information;
-13. logs and diagnostics are structured, correlated, and redacted;
-14. driver and `lpds-core` metadata are available without device communication;
-15. dynamic device identity and capabilities are not invented before connection;
-16. public return values are convertible to stable, framework-neutral forms usable by any adapter;
-17. transport and protocol internals are not accidentally exposed as part of the public API;
-18. LPDS-019 can correlate public calls with protocol-boundary evidence;
-19. the reusable base contract-test suite passes for the concrete driver;
-20. required history, reviews, documentation, and compatibility evidence are current.
+- [ ] `BaseInstrument` is importable and constructible without hardware access, and stays limited to shared infrastructure concerns (no device-specific protocol syntax).
+- [ ] State, session, timeout, retry, recovery, error, and logging components are implemented, with deterministic fake-clock/fake-transport test utilities.
+- [ ] A reusable concrete-driver contract-test suite exists, and at least one query-oriented and one command-oriented reference driver pass it.
+
+For a concrete driver built on it:
+
+- [ ] Import and construction avoid all device I/O; the public API is explicitly exposed, not via blanket reflection.
+- [ ] Connection lifecycle is deterministic: repeated connect/disconnect is defined, partial-connection failures release everything they acquired, and disconnect keeps attempting cleanup after an individual step fails.
+- [ ] Every session has explicit state with enforced legal transitions; concurrent calls on one session can't interleave unsafely.
+- [ ] All blocking paths use finite deadlines; retries only apply to explicitly retry-safe operations and share the caller's original deadline; recovery never converts an unverified failure into a reported success.
+- [ ] Errors preserve category and causal information; logs are structured and redact secrets before persistence.
+- [ ] Safe-state behavior exists for anything that controls a hazardous or persistent output.
+- [ ] The driver declares a compatible `lpds-core` version range, and LPDS-019 can correlate a public API call with protocol-boundary evidence.
+
+Treat gaps here the same way as elsewhere in this standard: note them (LPDS-001 §32) rather than blocking on a formal review.
 
 ---
 
-## 38. Failure Conditions
-
-LPDS-003 conformance shall fail when any of the following applies:
-
-- driver import or construction opens hardware unexpectedly;
-- automatic, reflection-based method export (by the driver or an adapter) exposes private or transport methods;
-- connect reports success without a usable transport and required communication verification;
-- a partial connection failure leaks a transport, lock, alias, or resource reservation;
-- disconnect stops after the first cleanup failure without attempting independent required cleanup;
-- state transitions are implicit, contradictory, or unvalidated;
-- an operation can block indefinitely;
-- retry resets the caller's total timeout;
-- a non-idempotent operation is automatically retried without approved duplicate protection;
-- recovery converts an unverified failed operation into success;
-- exceptions lose the original cause without justification;
-- secrets are written to persistent logs or diagnostics;
-- session selection is ambiguous or arbitrary;
-- concurrent calls can interleave on a non-thread-safe session;
-- safe-state behaviour is absent for a driver that controls a hazardous or persistent output;
-- the base class contains duplicated vendor protocol syntax;
-- a concrete driver overrides lifecycle orchestration without review and regression coverage;
-- `lpds-core` version evidence or compatibility declaration is missing;
-- LPDS-019 protocol evidence cannot be correlated with the originating operation.
-
----
-
-## 39. Review Checklist
-
-1. Is `BaseInstrument` limited to shared infrastructure concerns?
-2. Does import and construction avoid all device I/O?
-3. Is the concrete driver's public API explicitly and intentionally exposed, not via blanket reflection?
-4. Are private hooks and transport primitives hidden from every framework adapter?
-5. Is session ownership explicit?
-6. Are aliases normalized and selected deterministically?
-7. Is the state machine enforced?
-8. Does connect verify communication where safely possible?
-9. Are partial connection failures fully cleaned up?
-10. Are repeated connect and disconnect semantics defined?
-11. Does disconnect attempt safe-state, cleanup, close, and release even after intermediate failures?
-12. Are deadlines finite and monotonic?
-13. Do retries share the original deadline?
-14. Is each retried operation explicitly idempotent or duplicate-protected?
-15. Is recovery separated from retry?
-16. Are errors categorized and causally preserved?
-17. Are logs structured and secrets redacted before persistence?
-18. Can diagnostics be exported without changing device state?
-19. Are metadata and static capabilities available offline?
-20. Are dynamic capabilities marked unavailable until verified?
-21. Is one session protected against unsafe concurrent access?
-22. Are multi-session limits documented and tested?
-23. Are safe-state semantics implemented at the correct layer?
-24. Can LPDS-019 correlate a public API call with protocol traces?
-25. Does the reusable contract-test suite pass?
-26. Is the `lpds-core` compatibility range declared and verified?
-27. Are all lifecycle overrides justified and reviewed?
-28. Are LPDS-017, documentation, generated API docs, tests, and implementation synchronized?
-
----
-
-## 40. Minimum Definition of Done
-
-LPDS-003 is complete for the platform when:
-
-- a versioned shared `lpds-core` implementation exists;
-- the required state, session, timeout, retry, recovery, error, logging, diagnostics, redaction, conversion, and observation components are implemented;
-- the reference base class and protected hooks are documented;
-- deterministic fake clock, fake transport, and protocol observer test utilities exist;
-- the shared package's unit and compatibility tests pass;
-- a reusable concrete-driver contract-test suite exists;
-- at least one query-oriented, one command-oriented, and one non-text or SDK-based reference driver pass the contract suite;
-- documentation and migration guidance are published;
-- no Critical or unresolved Major review finding remains.
-
-LPDS-003 is complete for an individual driver when:
-
-- the driver declares and uses a compatible shared-core version;
-- all applicable concrete-driver requirements in Section 34 pass;
-- lifecycle and failure tests pass;
-- LPDS-019 observation correlation is demonstrated;
-- the current release review records LPDS-003 compliance or approved deviations.
-
----
-
-## 41. Goal
+## 38. Goal
 
 Provide one production-grade, transport-independent foundation that makes LPDS driver lifecycle, state, timeout, retry, recovery, logging, diagnostics, cleanup, and framework-coupling-prevention behaviour predictable across all supported hardware drivers while leaving device semantics and protocol implementation in their proper layers.
 
