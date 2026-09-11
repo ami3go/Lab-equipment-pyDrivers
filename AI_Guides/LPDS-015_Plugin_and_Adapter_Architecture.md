@@ -762,7 +762,6 @@ Requirements:
 | Capability truth | LPDS-013 authoritative capability model | Static filtering and runtime confirmation |
 | Configuration semantics | LPDS-014 schema and configuration model | Validation and handoff |
 | AI operational semantics | LPDS-017 `ai_contract.yaml` | AI planning and safe selection |
-| Bench resources and selected drivers | LPDS-018 deployed `system_ai_contract.yaml` | Explicit bench resolution |
 | Device protocol behavior | LPDS-019 protocol vectors and driver implementation | Not duplicated in plugin or adapter metadata |
 | Supported compatibility | `docs/compatibility.md` plus CI/HIL evidence | Manifest validation |
 | Release identity and integrity | LPDS release manifest, SBOM, checksums, provenance | Trust and audit |
@@ -1042,7 +1041,7 @@ The resolver may accept:
 
 The resolver shall apply this order:
 
-1. exact plugin ID from an explicit request or deployed LPDS-018 bench contract;
+1. exact plugin ID from an explicit request;
 2. policy filtering and availability validation;
 3. exact device-family and model compatibility;
 4. required transport compatibility;
@@ -1073,7 +1072,7 @@ A mismatch shall fail validation or mark the instance degraded according to the 
 
 ### 15.5 AI selection
 
-An AI agent shall prefer the exact plugin ID declared by the LPDS-018 bench contract. It shall not invent a plugin ID, assume wiring, or substitute a different driver merely because the substitute exposes a similar public API.
+An AI agent shall use an exact plugin ID it was explicitly given or that it resolved deterministically. It shall not invent a plugin ID or substitute a different driver merely because the substitute exposes a similar public API.
 
 ### 15.6 Adapter resolution
 
@@ -1315,7 +1314,7 @@ Capability metadata changes shall trigger plugin-manifest, AI-contract, document
 
 ---
 
-## 21. LPDS-017 and LPDS-018 Integration
+## 21. LPDS-017 Integration
 
 ### 21.1 AI Driver Contract
 
@@ -1332,20 +1331,6 @@ The plugin manager or AI planner shall verify:
 A stale or invalid AI contract shall not necessarily prevent manual diagnostic loading, but it shall prevent the plugin from being declared AI-planning ready.
 
 An adapter has no AI contract of its own under this version of LPDS-015. When an AI planner needs a driver bound into a specific framework, it shall resolve the driver by plugin ID against the AI contract first, and only then resolve a compatible adapter (§15.6) for the framework it is operating under.
-
-### 21.2 AI Test Bench Contract
-
-A deployed LPDS-018 bench contract should identify required drivers by exact plugin ID and approved version range.
-
-The plugin manager shall provide enough registry data to determine:
-
-- whether every bench-required plugin is installed;
-- whether its version is compatible;
-- whether required transports and capabilities are available;
-- whether the plugin is disabled, broken, conflicting, or quarantined;
-- whether an explicit simulator profile is being used.
-
-The plugin manager shall not infer physical wiring or bench ownership from installed packages.
 
 ---
 
@@ -1757,120 +1742,31 @@ A released driver shall pass plugin discovery and load validation from its built
 
 ---
 
-## 30. Conformance Levels
+## 30. Checklist
 
-### Level P0 — Entry-point registration
+**Discovery**
+- [ ] The distribution advertises its `lpds.drivers` (or `lpds.adapters`) entry point correctly, and the entry-point name/value agree with the manifest's plugin ID/provider path.
+- [ ] Provider and driver imports perform no hardware or network access; probing is time-bounded.
+- [ ] The manifest validates against its schema, and its identity fields agree with installed distribution metadata.
 
-- distribution installs;
-- entry point is present in `lpds.drivers` (or `lpds.adapters` for an adapter);
-- entry-point identity is correct.
+**Resolution and loading**
+- [ ] Compatibility (plugin API, Python, dependencies) is evaluated before instance creation; a plugin with unmet requirements doesn't get silently selected.
+- [ ] Explicit resolution by plugin ID works; an ambiguous resolution fails visibly rather than picking arbitrarily (e.g. by filesystem order).
+- [ ] `create_driver()` returns an unconnected instance; a requested hardware mode never silently falls back to simulation.
+- [ ] One broken plugin doesn't prevent other valid plugins from loading.
 
-### Level P1 — Manifest and provider validation
+**Adapters**
+- [ ] An adapter binds to an already-created driver instance — it never creates or connects the driver itself.
+- [ ] An adapter can be discovered, validated, bound, and unbound independently of the driver's own lifecycle.
+- [ ] The adapter's `target_plugin_id` actually matches the driver it binds to.
 
-- provider imports safely;
-- descriptor and manifest validate;
-- cross-artifact identity and version checks pass.
-
-### Level P2 — Compatibility and registry integration
-
-- host compatibility passes;
-- dependencies are classified correctly;
-- plugin (or adapter) appears in the registry with the expected status.
-
-### Level P3 — Load and instance creation
-
-- selected provider loads;
-- valid configuration is accepted;
-- canonical unconnected driver instance is created;
-- alias registration succeeds.
-
-### Level P4 — Framework adapter and application integration
-
-- runtime adapter binding succeeds;
-- access qualified by alias works in the target framework;
-- GUI/application metadata is complete;
-- capability and configuration references resolve.
-
-### Level P5 — Cleanup, conflict, and failure isolation
-
-- unload and unbind are finite;
-- cleanup evidence is produced;
-- conflicts are deterministic;
-- a broken plugin or adapter does not break other plugins or adapters;
-- security and quarantine policy is enforced.
+**Cleanup**
+- [ ] Unload/unbind is finite and reports incomplete cleanup rather than hiding it.
+- [ ] Manifests, registry exports, and logs contain no secrets.
 
 ---
 
-## 31. Acceptance Criteria
-
-An LPDS driver passes LPDS-015 only when:
-
-1. its built distribution advertises exactly the intended `lpds.drivers` entry point;
-2. the plugin ID follows the required stable naming rules;
-3. the entry-point name, provider path, manifest, distribution metadata, and version sources agree;
-4. provider and driver imports perform no hardware access;
-5. the provider probe completes within the finite timeout;
-6. the manifest validates against the approved schema;
-7. plugin API, Python, LPDS platform, and dependency compatibility are evaluated before instance creation;
-8. the plugin appears in the registry with a deterministic status;
-9. invalid or conflicting plugins cannot be selected silently;
-10. explicit resolution by plugin ID works;
-11. model, transport, and capability filtering is deterministic;
-12. ambiguous resolution fails visibly;
-13. valid configuration is checked before instance creation;
-14. `create_driver()` returns the canonical unconnected driver instance;
-15. requested hardware mode never silently falls back to simulation;
-16. multiple instances and aliases follow the descriptor policy;
-17. an adapter can bind the driver instance to its target framework using an explicit alias;
-18. common public API names from multiple driver instances or adapter bindings remain isolated;
-19. unload requests deterministic driver cleanup and reports incomplete cleanup;
-20. one plugin's failure does not prevent other valid plugins from being used;
-21. registry and validation evidence is generated without secrets;
-22. capability, configuration, LPDS-017, LPDS-018, and LPDS-019 references remain consistent with their authoritative sources;
-23. clean-wheel plugin tests pass;
-24. documentation, history, review, traceability, and release metadata are updated for plugin changes;
-25. no Critical or unresolved Major LPDS-015 finding remains;
-26. its adapter distributions, where present, advertise exactly the intended `lpds.adapters` entry point per adapter;
-27. adapter binding succeeds only against a plugin-API-compatible, already-created driver instance, and never triggers driver creation or connection itself;
-28. an adapter can be discovered, validated, and unbound independently, without affecting the underlying driver's own loaded state.
-
----
-
-## 32. Failure Conditions
-
-LPDS-015 shall fail for a driver, adapter, or platform implementation when:
-
-- no canonical entry point is packaged;
-- discovery depends on hard-coded imports or uncontrolled filesystem scanning;
-- plugin ID or adapter ID is unstable, versioned, invalid, or duplicated;
-- provider import performs hardware I/O;
-- driver import performs hardware I/O;
-- provider probe can block indefinitely;
-- manifest is missing, invalid, or stale;
-- manifest identity contradicts installed metadata;
-- a provider claims a different plugin ID (or adapter ID) than its entry point;
-- required compatibility is not evaluated;
-- missing mandatory dependencies are ignored;
-- a broken plugin or adapter crashes the registry refresh;
-- conflict resolution depends on discovery order;
-- an ambiguous selection is silently resolved;
-- loading implicitly connects to hardware;
-- requested hardware mode silently becomes simulation;
-- aliases collide or public API methods are merged without explicit namespacing;
-- single-instance policy is bypassed;
-- unload or unbind hides cleanup failure;
-- active code is hot-reloaded without approved behavior;
-- untrusted arbitrary paths are loaded in production mode;
-- secrets appear in manifests, registry exports, logs, or errors;
-- registry evidence is missing;
-- clean-installed wheel behavior differs from source-checkout validation;
-- a plugin or adapter change is released without corresponding tests, documentation, history, and review;
-- an adapter creates or connects a driver instance itself instead of binding an already-created one;
-- an adapter's `target_plugin_id` is inconsistent with the driver it actually binds to.
-
----
-
-## 33. Change Control
+## 31. Change Control
 
 Whenever any of the following changes, the same driver revision shall update and validate all affected artifacts:
 
@@ -1907,137 +1803,21 @@ Whenever any of the following changes, the same adapter revision shall update an
 - deprecation state;
 - bind or unbind behavior.
 
-A plugin ID change is a breaking integration change and requires a migration path, compatibility review, history entry, and LPDS-018 bench-contract update where used. An adapter ID or `target_plugin_id` change is similarly a breaking integration change for any host configuration that names it explicitly.
+A plugin ID change is a breaking integration change and requires a migration path, compatibility review, and a history entry. An adapter ID or `target_plugin_id` change is similarly a breaking integration change for any host configuration that names it explicitly.
 
 A provider or entry-point change without LPDS-015 test and manifest updates shall fail release validation.
 
 ---
 
-## 34. Integration with the LPDS Lifecycle
+## 32. Fitting This Into the Implementation Lifecycle
 
-### Gate 1 — Architecture and skeleton
-
-Deliver:
-
-- plugin ID decision;
-- `plugin.py` skeleton;
-- manifest skeleton;
-- entry-point declaration;
-- plugin architecture documentation;
-- unit-test skeleton;
-- no-hardware import proof;
-- adapter ID decision and `target_plugin_id` declaration, where an adapter is planned alongside this driver.
-
-### Gate 2 — Core implementation
-
-Deliver:
-
-- complete descriptor;
-- provider environment validation;
-- driver factory;
-- explicit configuration handoff;
-- registry integration tests;
-- initial dynamic driver-loading example, in plain Python;
-- initial adapter skeleton and adapter manifest, where applicable.
-
-### Gate 3 — Extended features
-
-Deliver as applicable:
-
-- capability-based resolution;
-- optional hardware discovery;
-- multi-instance support;
-- optional dependency degradation;
-- GUI metadata integration;
-- AI and bench-contract validation;
-- adapter compatibility validation against the driver's plugin API version.
-
-### Gate 4 — Tests and documentation
-
-Deliver:
-
-- full LPDS-015 test matrix;
-- clean-wheel validation;
-- adapter conformance tests;
-- plugin integration guide;
-- published documentation content;
-- compatibility and security reviews;
-- generated registry evidence, including the adapter registry where applicable.
-
-### Gate 5 — Review and release
-
-Deliver:
-
-- final plugin manifest;
-- final entry-point and wheel validation;
-- code, architecture, API, documentation, security, compatibility, and release reviews;
-- updated history and traceability;
-- release manifest, SBOM, checksums, and provenance where required;
-- correctly named LPDS release package;
-- final adapter manifest and entry-point validation, where an adapter is released alongside the driver.
+Mapped onto LPDS-020's phases: the plugin ID and a manifest skeleton with a no-hardware-import proof are early-phase (architecture/skeleton) work; the driver factory and registry integration tests land in the core-implementation phase; capability-based resolution and optional hardware discovery are naturally later, extended-feature work; and a clean-install test of the packaged entry point belongs in the tests/release phases, alongside the same review this document's checklist (§30) already covers. An adapter, if one is planned, follows this same shape one step behind — its `target_plugin_id` and manifest skeleton in an early phase, its binding/unbinding tests before release.
 
 ---
 
-## 35. Review Checklist
-
-1. Is the plugin ID valid, stable, and unversioned?
-2. Does `pyproject.toml` register the provider in `lpds.drivers`?
-3. Does the entry-point name equal the manifest plugin ID?
-4. Does the entry-point value equal the manifest provider path?
-5. Does installed distribution metadata match the manifest?
-6. Does provider import avoid hardware and network access?
-7. Does driver import avoid hardware and network access?
-8. Is provider probing isolated and time-bounded?
-9. Does the manifest validate against the approved schema?
-10. Are capability, configuration, AI-contract, and documentation references valid?
-11. Are Python, LPDS platform, and dependency requirements explicit?
-12. Are missing optional dependencies reflected in capabilities?
-13. Are duplicate IDs and ambiguous resolution handled deterministically?
-14. Is explicit plugin-ID resolution supported?
-15. Does driver creation remain unconnected?
-16. Is hardware-to-simulator fallback always explicit?
-17. Are instance aliases unique and used for qualified public-API access?
-18. Does multi-instance behavior match the descriptor?
-19. Are thread-safety limitations explicit?
-20. Is hardware discovery separate, explicit, read-only, scoped, and finite?
-21. Does unload request safe driver cleanup and preserve failures?
-22. Are arbitrary-path and untrusted-plugin policies explicit?
-23. Are manifests, logs, registry exports, and errors free of secrets?
-24. Does one broken plugin leave other plugins usable?
-25. Do clean-wheel tests pass?
-26. Are registry and validation reports generated?
-27. Are README, published documentation, guide, history, review, and traceability current?
-28. Are plugin changes represented in release integrity evidence?
-29. Are LPDS-013, LPDS-014, LPDS-017, LPDS-018, and LPDS-019 integrations consistent?
-30. Are all acceptance criteria satisfied?
-31. Does `pyproject.toml` register the adapter provider in `lpds.adapters`, where an adapter is shipped?
-32. Does the adapter manifest's `target_plugin_id` and plugin-API range match a real, compatible driver?
-33. Can the adapter be discovered, validated, bound, and unbound independently of the driver's own lifecycle?
-
 ---
 
-## 36. Minimum Definition of Done
-
-LPDS-015 implementation is complete for a driver when:
-
-- the driver is discoverable from its installed wheel through `lpds.drivers`;
-- the candidate can be enumerated without provider import;
-- the provider can be probed safely in isolation;
-- the plugin manifest and all identity/version checks pass;
-- runtime and dependency compatibility are reported correctly;
-- the driver appears in the registry with deterministic metadata and status;
-- explicit and capability-based resolution tests pass;
-- an unconnected driver instance can be created with validated configuration;
-- conflict, ambiguity, dependency, timeout, broken-provider, and unload tests pass;
-- registry and evidence exports are generated;
-- no mandatory behavior remains `NOT TESTED`;
-- documentation, history, review, and traceability are current;
-- the release package passes all applicable LPDS gates;
-- where an adapter is shipped for this driver, adapter discovery, binding, and unbinding tests pass, using the driver's own instance as the bind target.
-
----
-
-## 37. Goal
+## 33. Goal
 
 Provide a deterministic and production-oriented mechanism by which LPDS applications, automation frameworks (through their adapters), GUIs, and AI planners can discover installed drivers and adapters, validate what they are, select the correct implementation, load it without hidden hardware activity, and preserve safety, compatibility, isolation, and traceable evidence throughout the plugin and adapter lifecycle.
 
