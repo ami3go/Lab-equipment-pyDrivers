@@ -28,6 +28,27 @@ This is why the series is framework-agnostic where the original single-automatio
 standard it descends from was not: any automation framework is always an optional adapter
 on top of a driver, never a requirement of the driver itself.
 
+## Scale: this is meant for one person or a small team
+
+Every document here is written for a solo contributor or small team publishing one driver
+at a time — not a large organization with dedicated release management, security, and QA
+functions. Concretely:
+
+- **Driver status** is one of three labels — `wip`, `untested`, `stable` — set honestly by
+  the maintainer (LPDS-001 §9). There's no formal release-class taxonomy, approval
+  authority, or waiver process behind it.
+- Most "mandatory artifacts" you'll see elsewhere in driver-standard documents of this kind
+  (SBOM, checksums, requirements-traceability records, a dedicated `review/` folder) are
+  explicitly optional here — add them once a driver has external consumers who actually
+  need that level of assurance, not by default.
+- Every document's closing checklist is meant as a **solo self-review**, not a handoff to
+  an independent reviewer. An unchecked box is something to note in the README (LPDS-001
+  §32), not a blocker.
+
+If your driver grows into something with real production stakes — multiple contributors,
+paying users, safety certification requirements — most of these documents note where to
+add more rigor. That's opt-in, not the default.
+
 ## Documents
 
 | ID | Title | Covers |
@@ -41,7 +62,7 @@ on top of a driver, never a requirement of the driver itself.
 | [LPDS-007](LPDS-007_Error_and_Exception_Standard.md) | Error and Exception Standard | Exception hierarchy, error codes, message format |
 | [LPDS-008](LPDS-008_Logging_and_Evidence_Standard.md) | Logging and Evidence Standard | Structured logging, evidence correlation, diagnostics export |
 | [LPDS-009](LPDS-009_Testing_Standard.md) | Testing Standard | Unit / hardware-in-the-loop / adapter-conformance test layers |
-| [LPDS-010](LPDS-010_Driver_Review_Checklist.md) | Driver Review Checklist | Mandatory pre-release review checklist |
+| [LPDS-010](LPDS-010_Driver_Review_Checklist.md) | Driver Review Checklist | Solo-friendly self-review checklist before calling a driver `stable` |
 | [LPDS-011](LPDS-011_Release_Process.md) | Release Process | Versioning, packaging, changelog, release steps |
 | [LPDS-013](LPDS-013_Capability_Model.md) | Capability Model | Self-describing capability taxonomy and identifiers |
 | [LPDS-014](LPDS-014_Driver_Configuration_Model_Specification.md) | Driver Configuration Model Specification | Connection parameters, calibration, limits schema |
