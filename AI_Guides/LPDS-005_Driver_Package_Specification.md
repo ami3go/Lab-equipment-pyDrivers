@@ -301,7 +301,6 @@ New LPDS driver projects shall use the following layout. Device-specific files m
 │   └── ai_contract.lock
 ├── config/
 │   ├── schema.json
-│   ├── schema.lock
 │   ├── default.json
 │   ├── example.json
 │   ├── hil_resources.example.yaml
@@ -852,7 +851,7 @@ A strict documentation build and internal-link validation shall pass before rele
 
 ## 17. Configuration and resource requirements
 
-`config/` shall contain safe defaults, examples, schema, and HIL resource templates. Per LPDS-014, JSON (`schema.json`, `schema.lock`, `default.json`, `example.json`) is the canonical, authoritative configuration format; `hil_resources.example.yaml` remains YAML because it is a bench/HIL resource template outside the LPDS-014 configuration-schema domain, not a driver configuration document.
+`config/` shall contain safe defaults, examples, schema, and HIL resource templates. Per LPDS-014, JSON (`schema.json`, `default.json`, `example.json`, and optionally `schema.lock` once external tooling depends on schema stability) is the canonical, authoritative configuration format; `hil_resources.example.yaml` remains YAML because it is a bench/HIL resource template outside the LPDS-014 configuration-schema domain, not a driver configuration document.
 
 Requirements:
 
