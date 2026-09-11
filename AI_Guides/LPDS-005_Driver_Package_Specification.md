@@ -539,6 +539,23 @@ Schemas, command maps, defaults, and other package data shall be stored under `r
 
 The package shall not contain real credentials, private bench inventories, personal COM/VISA/LAN assignments, proprietary vendor installers, or undocumented binary dependencies.
 
+### 8.4 Shared core dependency
+
+Per LPDS-003, `src/<driver_name>/driver.py` shall build on the shared `lpds-core` package (`BaseInstrument` and its supporting infrastructure) rather than reimplementing connection, state, timeout, retry, logging, or diagnostics handling.
+
+`pyproject.toml` shall declare a compatible `lpds-core` version range as a normal runtime dependency, for example:
+
+```toml
+[project]
+dependencies = [
+  "lpds-core>=1.0,<2.0",
+]
+```
+
+A driver shall not vendor a modified private copy of `lpds-core` under the same identity. `release_manifest.yaml` shall record the effective `lpds-core` version the release was validated against, alongside the `lpds_compliance` block. Release validation shall fail when the installed `lpds-core` version falls outside the declared compatible range.
+
+`lpds-core` itself is an ordinary LPDS-governed Python package: it is versioned and released through LPDS-011 independently of any driver, and a change to its own public API follows LPDS-011 §10's compatibility rules like any other public API change.
+
 ---
 
 ## 9. AI-contract requirements

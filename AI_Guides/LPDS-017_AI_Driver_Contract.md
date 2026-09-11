@@ -144,7 +144,7 @@ A capability entry describes the driver's Python API only. It shall not referenc
 
 ### 8.2 Consistency with LPDS-002 and LPDS-013
 
-A capability entry's `risk_level` shall use LPDS-002 §16.1's lowercase scale. Where the driver also exposes a richer LPDS-013 capability record for the same operation, `capability_id` shall match the LPDS-013 `Get Capability Model` result exactly; a mismatch shall fail LPDS-013 change-control review.
+A capability entry's `risk_level` shall use LPDS-002 §16.1's lowercase scale. Where the driver also exposes a richer LPDS-013 capability record for the same operation, `capability_id` shall match the LPDS-013 `get_capability_model()` result exactly; a mismatch shall fail LPDS-013 change-control review.
 
 ## 9. State Machine
 

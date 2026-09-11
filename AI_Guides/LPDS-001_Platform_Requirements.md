@@ -753,7 +753,8 @@ driver_name: keysight34970
 release_version: "26.05"
 api_version: "1.0"
 release_class: P1
-entry_point: keysight34970.driver
+driver_import_path: keysight34970.driver
+driver_class: Keysight34970Driver
 
 supported_devices: []
 supported_transports: []

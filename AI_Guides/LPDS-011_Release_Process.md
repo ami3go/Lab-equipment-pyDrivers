@@ -32,7 +32,7 @@ LPDS-011 defines **how a revision becomes an approved release**. LPDS-005 define
 
 ### 2.1 In scope
 
-LPDS-011 covers:
+LPDS-011 covers the release process for a driver package and, equally, for the shared `lpds-core` package that LPDS-003 requires every driver to depend on — `lpds-core` is versioned and released independently of any driver, through this same process. LPDS-011 covers:
 
 - driver identifiers and release identities;
 - engineering gate versions;
