@@ -3,7 +3,7 @@
 **Version:** 3.0 (Draft)
 **Document ID:** LPDS-017
 **Status:** Draft project requirement
-**Applies to:** all discoverable LPDS driver packages, AI planners and code-generation agents, LPDS-015 plugin managers, LPDS-018 bench managers, and any tool that consumes `ai_contract.yaml`
+**Applies to:** all discoverable LPDS driver packages, AI planners and code-generation agents, LPDS-015 plugin managers, and any tool that consumes `ai_contract.yaml`
 
 ---
 
@@ -13,7 +13,7 @@ This specification defines the canonical, machine-readable AI contract that desc
 
 The contract describes the driver's public Python API — its methods, signatures, states, and effects — completely independently of any test-automation framework. An agent that has only `ai_contract.yaml` can generate a plain pytest-based test directly against the driver's public API. If the driver also ships an adapter (CLI, REST, pytest, …) whose own LPDS-015 entry-points manifest is present, the same agent may additionally generate tests in that adapter's framework by translating capability entries through the adapter's published mapping — but the contract itself is adapter-independent by design: it never encodes any particular framework's syntax, at any point.
 
-LPDS-017 is the sole normative source for the structure and required fields of `ai_contract.yaml` and its integrity companion `ai_contract.lock`. Other specifications (LPDS-013, LPDS-014, LPDS-015, LPDS-018) reference these files but shall not redefine their schema.
+LPDS-017 is the sole normative source for the structure and required fields of `ai_contract.yaml` and its integrity companion `ai_contract.lock`. Other specifications (LPDS-013, LPDS-014, LPDS-015) reference these files but shall not redefine their schema.
 
 ## 2. Scope Boundary
 
@@ -33,7 +33,6 @@ LPDS-017 does not define:
 - the connection/session state enum (owned by LPDS-003);
 - device configuration schema (owned by LPDS-014);
 - plugin discovery, loading, the plugin manifest, or adapter entry-points groups (owned by LPDS-015);
-- bench topology or multi-driver system contracts (owned by LPDS-018);
 - protocol-level conformance vectors (owned by LPDS-019).
 
 LPDS-017 references these authorities rather than duplicating them; a field in `ai_contract.yaml` that expresses a value governed by another LPDS specification shall use that specification's canonical vocabulary and shall fail contract validation if it diverges.

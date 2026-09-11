@@ -797,22 +797,7 @@ Where a method is bound to a capability record under the LPDS-013 capability mod
 
 ---
 
-## 20. Integration with LPDS-018
-
-LPDS-018 is required only when the conformance test needs real-device or bench connection information, including:
-
-- device address;
-- transport configuration;
-- required fixture;
-- allowed command profile;
-- prohibited operations;
-- startup and shutdown sequence.
-
-LPDS-019 does not require independent measurement equipment unless that equipment is necessary to observe the protocol itself.
-
----
-
-## 21. Change Control
+## 20. Change Control
 
 Whenever a public method or its protocol behavior is added, removed, renamed, aliased, deprecated, or changed, the same driver revision shall update:
 
@@ -828,7 +813,7 @@ A public call or protocol change without a corresponding LPDS-019 update shall f
 
 ---
 
-## 22. Review Checklist
+## 21. Review Checklist
 
 1. Are all exported public Python API methods inventoried?
 2. Was every supported public method called directly through its plain Python API?
@@ -848,7 +833,7 @@ A public call or protocol change without a corresponding LPDS-019 update shall f
 
 ---
 
-## 23. Minimum Definition of Done
+## 22. Minimum Definition of Done
 
 LPDS-019 is complete when:
 
@@ -864,7 +849,7 @@ LPDS-019 is complete when:
 
 ---
 
-## 24. Goal
+## 23. Goal
 
 Provide objective proof that every declared driver public API call reaches the intended device protocol operation and that every applicable device response is correctly received, interpreted, and returned by the driver — using nothing but the driver's plain Python interface.
 
