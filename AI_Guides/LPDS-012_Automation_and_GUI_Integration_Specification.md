@@ -1197,7 +1197,7 @@ results/gui/<bench_or_standalone>/<timestamp>/
 ├── measurements.csv
 ├── attachments/
 └── automation_run/
-    └── <framework-native artifacts, e.g. output.xml/log.html/report.html for a Robot Framework adapter>
+    └── <framework-native artifacts, e.g. JUnit XML/HTML report for a pytest adapter>
 ```
 
 Files that do not apply may be omitted, but the session summary shall state why.
@@ -2045,14 +2045,14 @@ The GUI may apply stricter policy. It shall not weaken any authoritative conditi
 
 ### Migration to LPDS
 
-Generalized from RFDS-012 v1.0 (Robot-Framework-oriented GUI integration) into a framework-agnostic automation and GUI integration specification:
+Generalized from an earlier, single-automation-framework-oriented GUI integration document into a framework-agnostic automation and GUI integration specification:
 
 - retitled to "Automation and GUI Integration Specification" to reflect that a GUI is one example generic consumer among several (dashboards, CLIs, other automation frameworks);
-- replaced "Robot Framework keyword" with "public method" / "capability" throughout;
-- generalized §19 and §32.7 from "Robot Framework Test and Workflow Execution" to "Automation Workflow and Test Execution," covering plain pytest execution against the driver's public API directly, as well as execution through any declared framework adapter;
-- generalized GUI-L3 from "Robot execution compatible" to "Automation workflow compatible";
-- updated all cross-references from RFDS-0NN to LPDS-0NN and package-tree examples to the `src/`-layout without the `rf_` prefix.
+- replaced every framework-specific keyword concept with "public method" / "capability" throughout;
+- generalized §19 and §32.7 to "Automation Workflow and Test Execution," covering plain pytest execution against the driver's public API directly, as well as execution through any declared framework adapter;
+- generalized GUI-L3 to "Automation workflow compatible," with no single automation framework privileged as the reference execution engine;
+- updated all cross-references to LPDS-0NN and package-tree examples to the `src/`-layout without the prior source project's naming prefix.
 
-### Version 1.0 (as RFDS-012)
+### Version 1.0
 
 Established the initial generic GUI integration contract, including metadata-driven capability projection, strict public-API and no-direct-protocol boundary, contract integration, generic control generation and validation, lifecycle/state/resource/timeout/cancellation/recovery presentation, manual and automated execution modes, safety/operator-action/emergency/authorization/destructive-operation rules, configuration/logging/evidence/diagnostics/accessibility/security requirements, optional device-specific extensions, and GUI compatibility levels, testing, coverage, review, and release acceptance.

@@ -65,7 +65,7 @@ LPDS-010 does not replace:
 - formal electrical, metrological, calibration, machinery, medical, or functional-safety certification;
 - vendor compliance certification;
 - independent penetration testing unless required by the device or deployment scope;
-- translation correctness of any separate automation-framework adapter (Robot Framework keywords, pytest fixtures, a CLI, a REST endpoint, ...) built on top of this driver.
+- translation correctness of any separate automation-framework adapter (pytest fixtures, a CLI, a REST endpoint, ...) built on top of this driver.
 
 LPDS-010 reviews the evidence from those activities and determines whether the evidence is sufficient for the claimed release status.
 

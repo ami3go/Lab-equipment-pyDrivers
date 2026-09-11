@@ -1309,7 +1309,7 @@ Loading a profile at driver construction shall not connect to hardware or energi
 
 The configuration manager should be supplied by the shared LPDS core package (LPDS-003's `BaseInstrument`) so that equivalent drivers expose equivalent configuration methods.
 
-Drivers shall expose the following canonical public methods unless an approved platform exception is documented. Any framework adapter (Robot Framework keywords, a CLI, etc.) derives its own bindings mechanically from these methods per LPDS-002 §7.1; it does not redefine their behaviour.
+Drivers shall expose the following canonical public methods unless an approved platform exception is documented. Any framework adapter (pytest fixtures, a CLI, etc.) derives its own bindings mechanically from these methods per LPDS-002 §7.1; it does not redefine their behaviour.
 
 ### 22.1 `get_driver_configuration_schema()`
 
@@ -2365,4 +2365,4 @@ The following LPDS documents should be updated or interpreted consistently with 
 
 ### Migration to LPDS
 
-Generalized from RFDS-014 v1.0: replaced "Robot Framework keyword" with plain Python method names throughout (Section 22), renamed schema/error/annotation prefixes from `rfds014`/`RFDS_CONFIG_*`/`x-rfds-*` to `lpds014`/`LPDS_CONFIG_*`/`x-lpds-*`, updated the package tree to the LPDS-005 `src/`-layout, and reframed Section 30.2's Robot-specific tests as plain pytest tests against the public API with an optional adapter-translation check.
+Generalized from an earlier, single-automation-framework-specific configuration model document: replaced every framework-specific keyword concept with plain Python method names throughout (Section 22), renamed schema/error/annotation prefixes from `rfds014`/`RFDS_CONFIG_*`/`x-rfds-*` to `lpds014`/`LPDS_CONFIG_*`/`x-lpds-*`, updated the package tree to the LPDS-005 `src/`-layout, and reframed Section 30.2's framework-specific tests as plain pytest tests against the public API with an optional adapter-translation check.

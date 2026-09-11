@@ -5,13 +5,13 @@
 **Version:** 1.0
 **Document ID:** LPDS-015
 **Status:** Draft project requirement
-**Applies to:** LPDS platform services, all discoverable LPDS driver packages, LPDS adapter packages, generic GUIs, framework adapters (Robot Framework, pytest, CLI, REST, and others), AI planners, bench managers, validation tools, and release packages
+**Applies to:** LPDS platform services, all discoverable LPDS driver packages, LPDS adapter packages, generic GUIs, framework adapters (pytest, CLI, REST, and others), AI planners, bench managers, validation tools, and release packages
 
 ---
 
 ## 1. Purpose
 
-This specification defines the LPDS plugin architecture used to discover, identify, validate, select, load, instantiate, and unload installed LPDS driver packages, and the parallel architecture used to discover, validate, select, and load the framework-specific adapters that expose those drivers to Robot Framework, pytest, a CLI, a REST layer, or any other automation framework — all without hard-coded imports.
+This specification defines the LPDS plugin architecture used to discover, identify, validate, select, load, instantiate, and unload installed LPDS driver packages, and the parallel architecture used to discover, validate, select, and load the framework-specific adapters that expose those drivers to pytest, a CLI, a REST layer, or any other automation framework — all without hard-coded imports.
 
 The architecture shall allow a generic application to:
 
@@ -80,7 +80,7 @@ LPDS-015 does not define:
 - bench wiring or resource topology;
 - protocol-call conformance testing;
 - hot replacement of Python code inside an active process;
-- the internal design of any specific framework adapter (Robot Framework keyword design, pytest fixture design, CLI argument design, REST route design, and similar) beyond the discovery/loading contract it must satisfy.
+- the internal design of any specific framework adapter (pytest fixture design, CLI argument design, REST route design, and similar) beyond the discovery/loading contract it must satisfy.
 
 These subjects remain governed by the applicable LPDS specifications, device requirements, Python packaging tools, and deployment policy.
 
@@ -215,7 +215,7 @@ Selected adapter provider
             ↓
 bind() against an already-created, unconnected driver instance
             ↓
-Framework-specific binding object (Robot library, pytest fixture, CLI command group, ...)
+Framework-specific binding object (pytest fixture, CLI command group, REST route table, ...)
 ```
 
 The hardware connection boundary shall remain below plugin discovery, provider validation, and normal driver instantiation. Adapter discovery and binding never touch hardware directly: an adapter only ever calls the already-validated public API of a driver instance it has been handed, and never creates or connects that instance itself.
@@ -290,7 +290,7 @@ This group is owned by the LPDS platform and identifies objects implementing the
 
 ```toml
 [project.entry-points."lpds.adapters"]
-"robotframework.keysight.n6700" = "keysight_n6700_robotframework_adapter.plugin:KeysightN6700RobotAdapterPlugin"
+"cli.keysight.n6700" = "keysight_n6700_cli_adapter.plugin:KeysightN6700CliAdapterPlugin"
 ```
 
 ```python
@@ -368,7 +368,7 @@ using the same character rules as §7.1 (lowercase ASCII, dot-separated segments
 Examples:
 
 ```text
-robotframework.keysight.n6700
+cli.keysight.n6700
 pytest.keysight.n6700
 cli.bk_precision.8500b
 ```
@@ -594,7 +594,7 @@ The adapter manifest shall contain at least:
 - `provider`;
 - `adapter_import_path`;
 - `adapter_class`;
-- `framework` (for example `robotframework`, `pytest`, `cli`, `rest`);
+- `framework` (for example `pytest`, `cli`, `rest`);
 - `framework_version` requirement;
 - `minimum_python`;
 - `lpds_platform_version` requirement;
@@ -609,19 +609,19 @@ Resource-reference forms follow §9.2.1. An adapter manifest shall not redeclare
 {
   "schema_version": "1.0",
   "adapter_api_version": "1.0",
-  "adapter_id": "robotframework.keysight.n6700",
+  "adapter_id": "cli.keysight.n6700",
   "target_plugin_id": "keysight.n6700",
   "target_plugin_api_version": ">=1,<2",
-  "adapter_name": "keysight_n6700_robotframework_adapter",
-  "display_name": "Keysight N6700 Robot Framework Adapter",
-  "description": "Robot Framework keyword adapter wrapping the keysight.n6700 LPDS driver.",
-  "distribution_name": "keysight-n6700-robotframework-adapter",
+  "adapter_name": "keysight_n6700_cli_adapter",
+  "display_name": "Keysight N6700 CLI Adapter",
+  "description": "CLI adapter wrapping the keysight.n6700 LPDS driver.",
+  "distribution_name": "keysight-n6700-cli-adapter",
   "distribution_version": "26.3",
-  "provider": "keysight_n6700_robotframework_adapter.plugin:KeysightN6700RobotAdapterPlugin",
-  "adapter_import_path": "keysight_n6700_robotframework_adapter.adapter",
-  "adapter_class": "KeysightN6700RobotLibrary",
-  "framework": "robotframework",
-  "framework_version": ">=7,<9",
+  "provider": "keysight_n6700_cli_adapter.plugin:KeysightN6700CliAdapterPlugin",
+  "adapter_import_path": "keysight_n6700_cli_adapter.adapter",
+  "adapter_class": "KeysightN6700CliLibrary",
+  "framework": "cli",
+  "framework_version": ">=1,<2",
   "minimum_python": ">=3.11",
   "lpds_platform_version": ">=1,<2",
   "deprecation": {
@@ -1014,7 +1014,7 @@ In addition:
 
 - an adapter shall declare its exact `target_plugin_id` and a plugin-API-version range it is compatible with;
 - a host shall not bind an adapter to a driver instance created from a plugin API version outside that declared range; such an attempt shall fail with `AdapterCompatibilityError` (§25);
-- the adapter's own framework-version requirement (for example a Robot Framework or pytest version range) is evaluated independently of, and does not affect, the driver plugin's own compatibility state;
+- the adapter's own framework-version requirement (for example a pytest or CLI-library version range) is evaluated independently of, and does not affect, the driver plugin's own compatibility state;
 - an incompatible or unavailable adapter shall never be reported as a driver-plugin incompatibility; the driver plugin may remain fully `AVAILABLE` and usable directly.
 
 ---
@@ -1171,11 +1171,11 @@ Where a framework binding is needed, a shared LPDS plugin-and-adapter manager ma
 - `bind_adapter`;
 - `unbind_adapter`.
 
-The names above are illustrative. A CLI, a pytest plugin, or a Robot Framework library may expose the equivalent operations under names natural to that framework.
+The names above are illustrative. A CLI, a pytest plugin, or a REST service may expose the equivalent operations under names natural to that framework.
 
 ### 17.2 Runtime binding
 
-An adapter that binds a driver instance to its target framework shall use that framework's own supported mechanism for registering a callable surface (for example, Robot Framework's dynamic or hybrid library API, a pytest fixture factory, a CLI command group, or a REST route table) or an equivalent reviewed API.
+An adapter that binds a driver instance to its target framework shall use that framework's own supported mechanism for registering a callable surface (for example, a pytest fixture factory, a CLI command group, or a REST route table) or an equivalent reviewed API.
 
 The bound object shall be registered under the requested alias, independent of any other adapter or driver instance active in the same process.
 
@@ -1195,23 +1195,19 @@ finally:
     manager.unload_plugin("psu")
 ```
 
-Example: Robot Framework adapter
+Example: CLI adapter
 
-```robot
-*** Settings ***
-Library    lpds_platform.adapters.robotframework.PluginManagerLibrary
-
-*** Test Cases ***
-Load Explicit Power Supply Driver
-    Refresh Driver Registry
-    ${plugin}=    Resolve Driver Plugin    plugin_id=keysight.n6700
-    Load Driver Plugin    ${plugin}[plugin_id]    alias=PSU    config=${PSU_CONFIG}
-    Bind Adapter    adapter_id=robotframework.keysight.n6700    alias=PSU
-    PSU.Connect    ${PSU_RESOURCE}
-    [Teardown]    Unload Driver Plugin    PSU
+```text
+$ psu-cli refresh-driver-registry
+$ psu-cli resolve-driver-plugin --plugin-id keysight.n6700
+$ psu-cli load-driver-plugin keysight.n6700 --alias PSU --config "$PSU_CONFIG"
+$ psu-cli bind-adapter --adapter-id cli.keysight.n6700 --alias PSU
+$ psu-cli psu connect "$PSU_RESOURCE"
+$ psu-cli psu set-voltage --channel 1 --volts 5.0
+$ psu-cli unload-driver-plugin PSU   # run on teardown
 ```
 
-The exact manager API is governed by its own implementation specification. The required behavior in this section is normative; the Robot Framework snippet illustrates one adapter among several, not the only supported integration.
+The exact manager API is governed by its own implementation specification. The required behavior in this section is normative; the CLI snippet illustrates one adapter among several, not the only supported integration.
 
 ### 17.3 Public API name collisions
 
@@ -1220,7 +1216,7 @@ The manager shall not silently merge identically named public API methods from m
 When multiple driver instances are bound through adapters into the same framework session:
 
 - each shall use a distinct alias;
-- the caller should use access qualified by alias, in the form natural to the target framework (for example `PSU.connect()` in Python or `PSU.Connect` as a Robot Framework keyword, and likewise `DMM.connect()` / `DMM.Connect`);
+- the caller should use access qualified by alias, in the form natural to the target framework (for example `PSU.connect()` in Python or `psu-cli connect` as a CLI subcommand, and likewise `DMM.connect()` / `dmm-cli connect`);
 - alias conflicts shall fail before binding;
 - no adapter shall overwrite another binding's registration silently.
 
@@ -1235,10 +1231,12 @@ psu = KeysightN6700Driver(config=psu_config)
 psu.connect(psu_resource)
 ```
 
-or, for a Robot Framework suite that does not need dynamic plugin management:
+or, for a CLI adapter that does not need dynamic plugin management:
 
-```robot
-Library    keysight_n6700_robotframework_adapter.RobotAdapterLibrary
+```python
+from keysight_n6700_cli_adapter import CliAdapter
+
+adapter = CliAdapter(config=psu_config)
 ```
 
 Dynamic loading is an additional platform capability, not a mandatory replacement for explicit static imports of a driver or an adapter.
@@ -1747,7 +1745,7 @@ Using deterministic fake plugins and a deterministic fake adapter, conformance t
 - unbind behavior;
 - clear failure for an unavailable or ambiguous plugin or adapter.
 
-A framework-specific acceptance suite (for example, a Robot Framework suite exercising the same behavior through a Robot Framework adapter) is recommended for any released adapter, but its detailed design is governed by that adapter's own test suite, not by this document.
+A framework-specific acceptance suite (for example, a pytest suite exercising the same behavior through a pytest fixture adapter) is recommended for any released adapter, but its detailed design is governed by that adapter's own test suite, not by this document.
 
 ### 29.4 Import-safety test environment
 
@@ -2131,7 +2129,7 @@ Reference specifications and documentation:
 
 - Python Packaging User Guide — Entry points specification: https://packaging.python.org/en/latest/specifications/entry-points/
 - Python Standard Library — `importlib.metadata`: https://docs.python.org/3/library/importlib.metadata.html
-- Robot Framework User Guide — using and creating test libraries (as one example of a framework an adapter may target): https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html
+- pytest documentation — fixtures (as one example of a framework an adapter may target): https://docs.pytest.org/en/stable/explanation/fixtures.html
 
 ---
 
@@ -2159,11 +2157,11 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 
-class KeysightN6700RobotAdapterPlugin:
+class KeysightN6700CliAdapterPlugin:
     """LPDS adapter provider. Importing this class must not access hardware
     and must not require a driver instance to already be connected."""
 
-    ADAPTER_ID: ClassVar[str] = "robotframework.keysight.n6700"
+    ADAPTER_ID: ClassVar[str] = "cli.keysight.n6700"
     TARGET_PLUGIN_ID: ClassVar[str] = "keysight.n6700"
 
     @classmethod
@@ -2183,15 +2181,15 @@ class KeysightN6700RobotAdapterPlugin:
             "status": "PASS",
             "checks": [
                 {"name": "python", "status": "PASS"},
-                {"name": "robotframework", "status": "PASS"},
+                {"name": "cli", "status": "PASS"},
             ],
         }
 
     @classmethod
     def bind(cls, driver: object, *, alias: str | None = None) -> object:
-        from .adapter import KeysightN6700RobotLibrary
+        from .adapter import KeysightN6700CliLibrary
 
-        return KeysightN6700RobotLibrary(driver=driver, alias=alias)
+        return KeysightN6700CliLibrary(driver=driver, alias=alias)
 ```
 
 This appendix is illustrative. The approved platform package shall provide the shared types, schemas, validators, exceptions, and lifecycle utilities for adapters just as it does for driver plugins (Appendix A).
@@ -2204,19 +2202,19 @@ This appendix is illustrative. The approved platform package shall provide the s
 {
   "schema_version": "1.0",
   "adapter_api_version": "1.0",
-  "adapter_id": "robotframework.keysight.n6700",
+  "adapter_id": "cli.keysight.n6700",
   "target_plugin_id": "keysight.n6700",
   "target_plugin_api_version": ">=1,<2",
-  "adapter_name": "keysight_n6700_robotframework_adapter",
-  "display_name": "Keysight N6700 Robot Framework Adapter",
-  "description": "Robot Framework keyword adapter wrapping the keysight.n6700 LPDS driver.",
-  "distribution_name": "keysight-n6700-robotframework-adapter",
+  "adapter_name": "keysight_n6700_cli_adapter",
+  "display_name": "Keysight N6700 CLI Adapter",
+  "description": "CLI adapter wrapping the keysight.n6700 LPDS driver.",
+  "distribution_name": "keysight-n6700-cli-adapter",
   "distribution_version": "26.3",
-  "provider": "keysight_n6700_robotframework_adapter.plugin:KeysightN6700RobotAdapterPlugin",
-  "adapter_import_path": "keysight_n6700_robotframework_adapter.adapter",
-  "adapter_class": "KeysightN6700RobotLibrary",
-  "framework": "robotframework",
-  "framework_version": ">=7,<9",
+  "provider": "keysight_n6700_cli_adapter.plugin:KeysightN6700CliAdapterPlugin",
+  "adapter_import_path": "keysight_n6700_cli_adapter.adapter",
+  "adapter_class": "KeysightN6700CliLibrary",
+  "framework": "cli",
+  "framework_version": ">=1,<2",
   "minimum_python": ">=3.11",
   "lpds_platform_version": ">=1,<2",
   "deprecation": {
@@ -2239,9 +2237,9 @@ This appendix is illustrative. The approved platform package shall provide the s
 ```
 
 ```toml
-# Separately released adapter distribution: keysight-n6700-robotframework-adapter
+# Separately released adapter distribution: keysight-n6700-cli-adapter
 [project.entry-points."lpds.adapters"]
-"robotframework.keysight.n6700" = "keysight_n6700_robotframework_adapter.plugin:KeysightN6700RobotAdapterPlugin"
+"cli.keysight.n6700" = "keysight_n6700_cli_adapter.plugin:KeysightN6700CliAdapterPlugin"
 ```
 
 A driver distribution and its adapter distributions are independently versioned, independently installable, and independently releasable. Installing the driver alone never installs, imports, or requires any automation framework.

@@ -112,7 +112,7 @@ When requirements conflict, safety requirements shall take precedence. Unresolve
 - **should / should not** — recommended requirement; deviation requires documented justification;
 - **may** — permitted implementation choice;
 - **driver** — a plain Python class exposing a public, documented Python API (methods, properties, type hints, docstrings), fully constructible, controllable, and testable from a plain Python/pytest session with no automation framework installed;
-- **adapter** — a separate, thin translation layer that exposes a driver instance's public API to one specific automation framework or interface (e.g. Robot Framework keywords, pytest fixtures, a CLI, a REST endpoint); an adapter contains no device logic of its own;
+- **adapter** — a separate, thin translation layer that exposes a driver instance's public API to one specific automation framework or interface (e.g. pytest fixtures, a CLI, a REST endpoint); an adapter contains no device logic of its own;
 - **test layer** — a category of tests defined by execution boundary and evidence objective;
 - **software-only test** — a test that requires no uncontrolled physical hardware;
 - **unit test** — a test of a small Python unit with dependencies isolated at an appropriate boundary;
@@ -243,7 +243,7 @@ Two layers are primary and mandatory for every driver:
 
 Both primary layers use plain pytest and require no automation framework to be installed; the driver itself shall not import, subclass, or depend on any test-automation framework.
 
-**Adapter conformance tests (T4)** are a distinct, smaller layer. They are mandatory for each adapter a project ships, but are intentionally thin: they verify only that the adapter correctly translates calls and results to and from the driver's already-tested public API, and they shall not duplicate device-logic, protocol, or hardware coverage that the two primary layers already provide. A project may ship zero, one, or several adapters for the same driver (for example, Robot Framework keywords, pytest fixtures, a CLI, a REST layer), each with its own conformance suite.
+**Adapter conformance tests (T4)** are a distinct, smaller layer. They are mandatory for each adapter a project ships, but are intentionally thin: they verify only that the adapter correctly translates calls and results to and from the driver's already-tested public API, and they shall not duplicate device-logic, protocol, or hardware coverage that the two primary layers already provide. A project may ship zero, one, or several adapters for the same driver (for example, pytest fixtures, a CLI, a REST layer), each with its own conformance suite.
 
 The remaining layers (T0, T2, T3, T5, T7, T8, T9) support, extend, or gate the primary and adapter layers; see the table below.
 
@@ -326,7 +326,7 @@ Contains tests of multiple real project components together, such as:
 
 ### 7.3 `tests/adapters/`
 
-Contains adapter conformance suites, one per supported automation framework or interface (for example, Robot Framework keywords, pytest fixtures, a CLI, a REST layer), that verify translation correctness against the driver's public API.
+Contains adapter conformance suites, one per supported automation framework or interface (for example, pytest fixtures, a CLI, a REST layer), that verify translation correctness against the driver's public API.
 
 Software-only adapter conformance suites shall normally exercise the underlying driver against an approved simulator, fake device service, or protocol replay profile.
 
@@ -335,7 +335,7 @@ Software-only adapter conformance suites shall normally exercise the underlying 
 Contains tests for:
 
 - supported Python versions;
-- supported adapter-framework versions (for example, supported Robot Framework versions, where a Robot Framework adapter is provided);
+- supported adapter-framework versions (for example, supported pytest versions, where a pytest adapter is provided);
 - supported dependency versions or ranges;
 - public API compatibility;
 - aliases and deprecations;
@@ -449,7 +449,7 @@ test_parser_2
 test_check_error
 ```
 
-An adapter conformance suite hosted by a framework with its own naming convention (for example, Robot Framework test names) shall follow that framework's convention while preserving the same descriptive intent.
+An adapter conformance suite hosted by a framework with its own naming convention (for example, a CLI adapter's own subcommand-test naming) shall follow that framework's convention while preserving the same descriptive intent.
 
 ### 8.3 Requirement metadata
 
@@ -457,7 +457,7 @@ A test should reference applicable identifiers through one or more of:
 
 - pytest marker;
 - docstring;
-- adapter-framework tag (for example, a Robot Framework tag);
+- adapter-framework tag (for example, a pytest marker);
 - test data field;
 - requirement traceability matrix.
 
@@ -857,8 +857,8 @@ Adapter conformance tests shall verify that each adapter correctly exposes and t
 
 Adapter conformance tests shall cover as applicable, for each adapter:
 
-1. adapter import or registration (for example, Robot Framework library import, pytest fixture registration, CLI command registration, REST route registration);
-2. adapter surface completeness — every public driver method exposed by the adapter is present, discoverable, and callable through the adapter (for example, Libdoc-visible keyword availability for a Robot Framework adapter);
+1. adapter import or registration (for example, pytest fixture registration, CLI command registration, REST route registration);
+2. adapter surface completeness — every public driver method exposed by the adapter is present, discoverable, and callable through the adapter (for example, a CLI adapter's `--help` output listing every registered command);
 3. argument marshalling from the framework's native argument forms into the driver's public API;
 4. return-value marshalling from the driver's public API into the framework's native return or output form, including schema;
 5. exception-to-framework-failure translation, preserving the documented exception category and meaningful message content;
@@ -904,9 +904,9 @@ Every adapter conformance run used as evidence shall preserve:
 
 - a machine-readable result file (for example, a pytest JUnit XML report);
 - a human-readable report (for example, a pytest HTML report);
-- and, where the adapter's host framework produces its own native reports (for example, a Robot Framework adapter's `output.xml`, `log.html`, and `report.html`), those native artifacts.
+- and, where the adapter's host framework produces its own additional native reports, those native artifacts.
 
-**Example: Robot Framework adapter.** A Robot Framework adapter is a thin class that constructs a driver instance and exposes its public methods as keywords, translating arguments and return values at the boundary; it contains no device logic, and its own conformance suite only proves that translation, not device behaviour (which is proven by the driver's T1/T6 tests).
+**Example: CLI adapter.** A CLI adapter is a thin class that constructs a driver instance and exposes its public methods as subcommands, translating arguments and return values at the boundary; it contains no device logic, and its own conformance suite only proves that translation, not device behaviour (which is proven by the driver's T1/T6 tests).
 
 ---
 
@@ -1192,7 +1192,7 @@ They shall cover as applicable:
 
 - minimum supported Python version;
 - maximum tested Python version;
-- minimum supported adapter-framework version, for each adapter provided (for example, minimum supported Robot Framework version);
+- minimum supported adapter-framework version, for each adapter provided (for example, minimum supported pytest version);
 - maximum tested adapter-framework version, for each adapter provided;
 - primary operating systems;
 - dependency lower and upper bounds where maintained;
@@ -1552,7 +1552,7 @@ It shall execute as applicable:
 - compatibility matrix;
 - LPDS-019 simulator conformance;
 - coverage enforcement;
-- adapter API-documentation generation (for example, Libdoc for a Robot Framework adapter);
+- adapter API-documentation generation (for example, generated CLI `--help` reference for a CLI adapter);
 - AI contract validation;
 - public API comparison;
 - documentation build;
@@ -1575,7 +1575,7 @@ They shall use:
 
 ### 31.3 Matrix coverage
 
-The CI matrix shall cover the declared supported Python versions, and the declared supported version of each adapter framework a project provides (for example, Robot Framework), at an appropriate cadence.
+The CI matrix shall cover the declared supported Python versions, and the declared supported version of each adapter framework a project provides (for example, pytest), at an appropriate cadence.
 
 ### 31.4 Release workflow
 
@@ -1592,7 +1592,7 @@ Each release-relevant run shall record as applicable:
 - project and driver version;
 - commit or source revision;
 - Python version;
-- adapter-framework versions in use (for example, Robot Framework version, where applicable);
+- adapter-framework versions in use (for example, pytest version, where applicable);
 - operating system;
 - dependency versions;
 - test profile;
@@ -1611,7 +1611,7 @@ Software test evidence shall include as applicable:
 
 - pytest or equivalent machine-readable results;
 - coverage XML and HTML or equivalent;
-- adapter conformance result files (for example, a Robot Framework adapter's `output.xml`, `log.html`, and `report.html`);
+- adapter conformance result files (for example, a pytest adapter's JUnit XML and HTML report);
 - compatibility results;
 - replay or simulator result summary;
 - conformance summary;
@@ -1982,7 +1982,7 @@ LPDS-009 is complete for a released driver when:
 
 ## Appendix B — Recommended Test Tags
 
-Recommended tags include (implemented as pytest markers, or as native tags in an adapter's host framework, e.g. Robot Framework tags):
+Recommended tags include (implemented as pytest markers, or as native tags in an adapter's host framework):
 
 ```text
 unit
@@ -2082,7 +2082,7 @@ This example is illustrative. Device-specific profiles shall define the actual s
 - Source revision: <commit>
 - Profile: conformance_simulator
 - Python: 3.x
-- Adapters exercised: Robot Framework 7.x
+- Adapters exercised: pytest adapter 1.x
 - Simulator: example-simulator 1.2
 - HIL used: No
 - Qualification supported by this run: Q3 Protocol Conformant

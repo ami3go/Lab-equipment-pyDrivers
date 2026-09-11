@@ -46,7 +46,7 @@ public API method on the driver
 driver and physical device
 ```
 
-A generic application normally calls the public API method directly. When the application is itself a framework-specific consumer (a Robot Framework test suite, a pytest fixture, a CLI), a thin framework adapter may sit between the application and the driver, translating calls and results — the adapter contains no device logic and the discovery contract described here is unchanged by its presence.
+A generic application normally calls the public API method directly. When the application is itself a framework-specific consumer (a pytest test suite, a CLI, a REST client), a thin framework adapter may sit between the application and the driver, translating calls and results — the adapter contains no device logic and the discovery contract described here is unchanged by its presence.
 
 The capability model is a **functional discovery contract**. It is not merely generated method documentation.
 
@@ -244,21 +244,16 @@ A driver may expose additional convenience discovery methods, but they shall not
 
 ### 7.2 Framework adapter bindings
 
-Where a driver is consumed through a framework-specific adapter (a Robot Framework keyword library, pytest fixtures, a CLI command set, a REST layer, ...), the adapter shall expose the same discovery operations under whatever naming convention its framework requires, by calling straight through to the driver's public discovery methods. An adapter shall not reimplement discovery logic, filter results independently of the driver, or cache a copy of the model that can diverge from the driver's own state. Multiple adapters may wrap the same driver instance simultaneously without conflict, since none of them hold discovery state of their own.
+Where a driver is consumed through a framework-specific adapter (a pytest fixture library, a CLI command set, a REST layer, ...), the adapter shall expose the same discovery operations under whatever naming convention its framework requires, by calling straight through to the driver's public discovery methods. An adapter shall not reimplement discovery logic, filter results independently of the driver, or cache a copy of the model that can diverge from the driver's own state. Multiple adapters may wrap the same driver instance simultaneously without conflict, since none of them hold discovery state of their own.
 
-Example: Robot Framework adapter
+Example: CLI adapter
 
-```robotframework
-*** Settings ***
-Library    keysight_n6700.robotframework_adapter
-
-*** Test Cases ***
-Example
-    ${model}=    Get Capability Model
-    ${cap}=      Get Driver Capability    measure.voltage.dc
+```text
+$ keysight-n6700 get-capability-model
+$ keysight-n6700 get-driver-capability measure.voltage.dc
 ```
 
-Here, `Get Capability Model` and `Get Driver Capability` are thin adapter keywords that call `driver.get_capability_model()` and `driver.get_driver_capability(...)` respectively and translate the returned values into whatever representation the framework expects (see §7.3). A driver may document the expected adapter method-to-keyword naming convention, but the mapping itself is an adapter concern, not a driver requirement.
+Here, `get-capability-model` and `get-driver-capability` are thin adapter subcommands that call `driver.get_capability_model()` and `driver.get_driver_capability(...)` respectively and translate the returned values into whatever representation the framework expects (see §7.3). A driver may document the expected adapter method-to-command naming convention, but the mapping itself is an adapter concern, not a driver requirement.
 
 ### 7.3 Return transport
 
@@ -544,7 +539,7 @@ Each executable capability shall define:
 - `aliases` — alternate public method names, if any;
 - `driver_class` — the importable class implementing the capability;
 - whether the binding is direct, compatibility, composed, or virtual;
-- `adapters` (optional) — a namespaced map of framework-specific binding information (for example, a Robot Framework keyword name, a CLI command, or a REST route) for each framework adapter that wraps this driver. Adapter entries are informational for tooling; the driver's own conformance does not depend on any adapter existing.
+- `adapters` (optional) — a namespaced map of framework-specific binding information (for example, a pytest fixture name, a CLI command, or a REST route) for each framework adapter that wraps this driver. Adapter entries are informational for tooling; the driver's own conformance does not depend on any adapter existing.
 
 A capability may be descriptive-only only when `binding.executable` is `false` and the reason is explicit.
 
@@ -1209,14 +1204,14 @@ caps = driver.find_driver_capabilities(
 )
 ```
 
-Example: Robot Framework adapter
+Example: CLI adapter
 
-```robotframework
-${caps}=    Find Driver Capabilities
-...    category=measure
-...    available=${TRUE}
-...    return_quantity=electric_potential
-...    maximum_risk=low
+```text
+$ example-driver find-driver-capabilities \
+    --category measure \
+    --available \
+    --return-quantity electric_potential \
+    --maximum-risk low
 ```
 
 The query shall return an empty list when no capabilities match. It shall not fail solely because there are no matches.
@@ -1297,7 +1292,7 @@ A semantic breaking change shall use a new capability ID or a versioned capabili
 
 ### 28.3 Aliases
 
-Method aliases shall be declared in the binding. Framework adapter aliases (for example, alternate Robot Framework keyword names) shall be declared within that adapter's own binding entry. Capability aliases, when unavoidable, shall be declared separately and resolve to one canonical capability ID.
+Method aliases shall be declared in the binding. Framework adapter aliases (for example, alternate CLI subcommand names) shall be declared within that adapter's own binding entry. Capability aliases, when unavoidable, shall be declared separately and resolve to one canonical capability ID.
 
 ---
 
@@ -1408,7 +1403,7 @@ The validator shall detect:
 - non-serializable return declaration;
 - stale binding after a method rename or removal.
 
-Where a framework adapter is present, the adapter's own keyword/fixture/command bindings may be verified separately by adapter-level tooling (for example, Robot Framework Libdoc-based verification), but that verification is an adapter concern and is not required for driver conformance.
+Where a framework adapter is present, the adapter's own keyword/fixture/command bindings may be verified separately by adapter-level tooling (for example, a CLI adapter's own `--help`-based verification), but that verification is an adapter concern and is not required for driver conformance.
 
 LPDS-013 binding validation proves discoverability and metadata consistency. LPDS-019 proves callability and protocol behavior.
 
@@ -1523,9 +1518,9 @@ binding:
   aliases: [program_voltage]
   driver_class: keysight_n6700.KeysightN6700
   adapters:
-    robotframework:
-      keyword: Set DC Voltage
-      aliases: [Program Voltage]
+    cli:
+      command: set-dc-voltage
+      aliases: [program-voltage]
 arguments:
   - name: channel
     position: 1
@@ -1621,8 +1616,8 @@ binding:
   aliases: []
   driver_class: keysight_n6700.KeysightN6700
   adapters:
-    robotframework:
-      keyword: Measure DC Voltage
+    cli:
+      command: measure-dc-voltage
 arguments:
   - name: channel
     position: 1
@@ -1704,27 +1699,36 @@ finally:
     driver.disconnect()
 ```
 
-Example: Robot Framework adapter
+Example: pytest fixture adapter
 
-```robotframework
-*** Settings ***
-Library    keysight_n6700.robotframework_adapter
+```python
+# adapters/pytest/keysight_n6700_fixtures.py
+import pytest
+from keysight_n6700 import KeysightN6700
 
-*** Test Cases ***
-Discover Safe Voltage Measurement Capability
-    ${model}=    Get Capability Model    mode=static
-    ${matches}=    Find Driver Capabilities
-    ...    capability_id=measure.voltage.dc
-    ...    maximum_risk=low
-    Should Not Be Empty    ${matches}
 
-    Connect To Instrument    TCPIP0::192.168.0.10::inst0::INSTR
-    ${model}=    Refresh Driver Capabilities    mode=effective
-    ${cap}=    Get Driver Capability    measure.voltage.dc
-    Should Be True    ${cap}[availability][available]
-    ${voltage}=    Measure DC Voltage    channel=1
-    Log    Measured voltage: ${voltage} V
-    [Teardown]    Disconnect From Instrument
+@pytest.fixture
+def psu():
+    driver = KeysightN6700()
+    model = driver.get_capability_model(mode="static")
+    matches = driver.find_driver_capabilities(
+        capability_id="measure.voltage.dc", maximum_risk="low"
+    )
+    assert matches
+
+    driver.connect(resource="TCPIP0::192.168.0.10::inst0::INSTR")
+    try:
+        yield driver
+    finally:
+        driver.disconnect()
+
+
+def test_discover_safe_voltage_measurement_capability(psu):
+    model = psu.refresh_driver_capabilities(mode="effective")
+    cap = psu.get_driver_capability("measure.voltage.dc")
+    assert cap["availability"]["available"]
+    voltage = psu.measure_dc_voltage(channel=1)
+    print(f"Measured voltage: {voltage} V")
 ```
 
 ---
@@ -2245,8 +2249,8 @@ capabilities:
       aliases: []
       driver_class: example_meter.ExampleMeter
       adapters:
-        robotframework:
-          keyword: Get Driver Information
+        cli:
+          command: get-driver-information
     arguments: []
     returns:
       - name: driver_information

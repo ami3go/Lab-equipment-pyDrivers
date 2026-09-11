@@ -41,7 +41,7 @@ The base class shall reduce duplicated infrastructure without absorbing device-s
 6. preserve causal error information while producing errors that are directly actionable from plain Python and that a framework adapter can translate into a framework-native failure without losing that information;
 7. support one or more named sessions where the concrete driver permits them;
 8. expose enough evidence hooks for LPDS-019 protocol-conformance testing;
-9. be pure Python with zero dependency on, or awareness of, Robot Framework or any other automation framework — it shall have no concept of any such framework at all, and shall be fully constructible, controllable, and testable from a plain Python/pytest session with no automation framework installed;
+9. be pure Python with zero dependency on, or awareness of, any automation or GUI framework — it shall have no concept of any such framework at all, and shall be fully constructible, controllable, and testable from a plain Python/pytest session with no automation framework installed;
 10. evolve independently as a versioned LPDS shared component.
 
 ---
@@ -112,7 +112,7 @@ LPDS-003 defines shared implementation semantics. It shall not silently redefine
 - **base class** — the shared `BaseInstrument` implementation;
 - **concrete driver** — a device-specific Python driver derived from the base class;
 - **driver core** — device-semantics implementation independent of any particular framework adapter's presentation where practical;
-- **adapter** — a separate, thin translation layer that exposes a driver instance's public API to one specific automation framework or interface (Robot Framework keywords, pytest fixtures, a CLI command set, a REST endpoint, ...); an adapter contains no device logic of its own and may be one of several wrapping the same driver;
+- **adapter** — a separate, thin translation layer that exposes a driver instance's public API to one specific automation framework or interface (pytest fixtures, a CLI command set, a REST endpoint, ...); an adapter contains no device logic of its own and may be one of several wrapping the same driver;
 - **session** — one logical connection and its associated state, transport, identity, configuration, locks, and evidence context;
 - **alias** — caller-visible name identifying a session;
 - **transport** — the object performing communication at the device boundary;
@@ -128,7 +128,7 @@ LPDS-003 defines shared implementation semantics. It shall not silently redefine
 The required execution structure is:
 
 ```text
-Framework adapter (Robot Framework keywords, pytest fixtures, CLI, REST, ...)
+Framework adapter (pytest fixtures, CLI, REST, ...)
 or a direct plain-Python caller
                 ↓
 Concrete LPDS driver
@@ -889,7 +889,7 @@ Redaction shall occur before persistent output. Diagnostic exporters shall not r
 
 ### 22.5 Adapter-facing logging
 
-The base may publish concise operational messages that a framework adapter forwards to its own logging surface (for example a Robot Framework log, pytest captured output, or a CLI console), but structured evidence shall remain available independently of any adapter or framework internals.
+The base may publish concise operational messages that a framework adapter forwards to its own logging surface (for example pytest captured output, a CLI console, or a REST response log), but structured evidence shall remain available independently of any adapter or framework internals.
 
 ### 22.6 Relationship to LPDS-008
 
@@ -974,17 +974,17 @@ Capability reporting shall remain consistent with LPDS-013, the driver's LPDS-01
 
 The base and concrete driver classes shall not import, subclass, decorate, or otherwise structurally depend on any automation-framework base class, decorator, or metaclass. The base class shall not provide automatic, reflection-based export of its methods to any framework. A framework adapter shall explicitly declare which public methods it exposes to its framework.
 
-Example: Robot Framework adapter
+Example: framework adapter
 
 ```python
-class ExampleInstrumentKeywords:
-    """Thin Robot Framework adapter around ExampleInstrumentDriver.
+class ExampleInstrumentAdapter:
+    """Thin adapter around ExampleInstrumentDriver, for whichever
+    automation framework this adapter package targets.
 
     Contains no device logic; every call is forwarded to the driver's
-    public API and results are converted to Robot-compatible values.
+    public API and results are converted to whatever representation
+    that framework expects.
     """
-
-    ROBOT_LIBRARY_SCOPE = "SUITE"
 
     def __init__(self, *args, **kwargs) -> None:
         self._driver = ExampleInstrumentDriver(*args, **kwargs)
@@ -1007,11 +1007,11 @@ driver.disconnect(alias="default")
 
 ### 25.2 Adapter lifecycle scope
 
-The recommended default is that one adapter instance owns exactly one driver instance for the lifetime of one automation-scope equivalent (for example, one Robot Framework `SUITE`-scoped library instance, or one pytest fixture scope). Broader sharing (an RF `GLOBAL`-equivalent scope) may be used only when session ownership, cleanup, parallel execution, and cross-suite state retention are explicitly designed and tested by the adapter.
+The recommended default is that one adapter instance owns exactly one driver instance for the lifetime of one automation-scope equivalent (for example, one pytest fixture scope, or one CLI process invocation). Broader sharing across multiple automation-scope equivalents may be used only when session ownership, cleanup, parallel execution, and cross-suite state retention are explicitly designed and tested by the adapter.
 
 ### 25.3 Adapter version reporting
 
-A framework adapter shall expose the driver's version as its own reported version (for example, as the Robot Framework library version). The effective `lpds-core` version shall be included in driver information and diagnostics rather than substituted for the driver version.
+A framework adapter shall expose the driver's version as its own reported version (for example, as the adapter package's own reported version). The effective `lpds-core` version shall be included in driver information and diagnostics rather than substituted for the driver version.
 
 ### 25.4 Public common methods
 
@@ -1044,7 +1044,7 @@ Opaque transport or SDK objects shall not leak through the driver's public API.
 
 ### 25.7 Failure messages
 
-Failures raised by the driver shall be concise enough for an adapter to surface directly to its consumer (for example in a Robot Framework `log.html`, a pytest assertion message, or a CLI error line) while retaining structured details in diagnostics and evidence.
+Failures raised by the driver shall be concise enough for an adapter to surface directly to its consumer (for example in a pytest assertion message, a CLI error line, or a REST error response) while retaining structured details in diagnostics and evidence.
 
 ---
 
@@ -1393,7 +1393,7 @@ For each supported framework adapter, adapter-level conformance tests shall veri
 - the concrete driver, and any adapter wrapping it, import without hardware;
 - only approved common and device-specific public methods are visible through the adapter;
 - base-supplied common methods have the LPDS-002 signatures;
-- errors become actionable, adapter-appropriate failures (for example a Robot Framework failure, a pytest assertion failure, or a non-zero CLI exit with message);
+- errors become actionable, adapter-appropriate failures (for example a pytest assertion failure, a non-zero CLI exit with message, or an HTTP error response);
 - session aliases and return values convert correctly to the adapter's expected types;
 - teardown closes all sessions after a failed test.
 
@@ -1403,7 +1403,7 @@ The test doubles and observer shall permit LPDS-019 to associate each device-fac
 
 ### 33.5 Compatibility matrix
 
-`lpds-core` shall be tested against the supported Python version matrix and, for each maintained adapter, against its supported framework version matrix (for example Robot Framework or pytest), and against representative driver classes, including at least:
+`lpds-core` shall be tested against the supported Python version matrix and, for each maintained adapter, against its supported framework version matrix (for example pytest, or a CLI library's own supported version range), and against representative driver classes, including at least:
 
 - query-oriented instrument;
 - command-only instrument or relay;

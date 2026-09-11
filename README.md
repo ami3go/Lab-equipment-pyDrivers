@@ -33,8 +33,8 @@ all driver repositories.
 [`AI_Guides/`](AI_Guides/README.md) holds the Lab pyDrivers Standard (LPDS): the
 normative spec set for designing, building, testing, and releasing a driver in this
 ecosystem. The core idea: a driver is plain, framework-independent Python verified
-completely on its own, and any test-automation framework (Robot Framework, pytest, a
-CLI, ...) is bolted on afterward as a separate, thin adapter. New driver repos should
+completely on its own, and any test-automation framework (pytest, a CLI, REST, ...) is
+bolted on afterward as a separate, thin adapter. New driver repos should
 follow this standard; see [`AI_Guides/README.md`](AI_Guides/README.md) for the full
 document index.
 

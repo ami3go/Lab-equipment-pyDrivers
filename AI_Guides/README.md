@@ -11,11 +11,11 @@ Every document in this series is built on one principle:
 - **Driver** — a plain, framework-independent Python class exposing a documented public
   API (typed methods, properties, docstrings). A driver must be fully constructible,
   controllable, and testable from a plain Python/pytest session with **no** test-automation
-  framework installed. It shall not import, subclass, or depend on Robot Framework, pytest
-  plugins, or any other framework.
+  framework installed. It shall not import, subclass, or depend on a pytest plugin, or
+  any other framework.
 - **Adapter** — a separate, thin translation layer that exposes an already-verified
-  driver's public API to one specific automation framework or interface: Robot Framework
-  keywords, pytest fixtures, a CLI, a REST endpoint, a GUI test bench, etc. An adapter
+  driver's public API to one specific automation framework or interface: pytest
+  fixtures, a CLI, a REST endpoint, a GUI test bench, etc. An adapter
   contains no device logic of its own; it only translates calls and results between its
   framework and the driver's public API. The same driver can have several adapters at
   once, written and versioned independently of the driver and of each other.
@@ -24,9 +24,9 @@ Every document in this series is built on one principle:
   equipment — *before* writing any adapter. An adapter is verified separately afterward,
   with thin translation-correctness tests, not device-logic tests.
 
-This is why the series is framework-agnostic where the original Robot-Framework-only
-standard it descends from was not: Robot Framework (or any other framework) is always an
-optional adapter on top of a driver, never a requirement of the driver itself.
+This is why the series is framework-agnostic where the original single-automation-framework
+standard it descends from was not: any automation framework is always an optional adapter
+on top of a driver, never a requirement of the driver itself.
 
 ## Documents
 
@@ -49,7 +49,7 @@ optional adapter on top of a driver, never a requirement of the driver itself.
 | [LPDS-015](LPDS-015_Plugin_and_Adapter_Architecture.md) | Plugin and Adapter Architecture | Entry-points based discovery for drivers and, separately, adapters |
 | [LPDS-017](LPDS-017_AI_Driver_Contract.md) | AI Driver Contract | `ai_contract.yaml`: machine-readable, adapter-independent driver description |
 | [LPDS-018](LPDS-018_AI_Test_Bench_Contract.md) | AI Test Bench Contract | Multi-driver bench topology and system-level contract |
-| [LPDS-019](LPDS-019_Driver_Conformance_Test_Specification.md) | Driver Conformance Test Specification | Call/protocol conformance vectors for a driver's public API, with a worked Robot Framework adapter example |
+| [LPDS-019](LPDS-019_Driver_Conformance_Test_Specification.md) | Driver Conformance Test Specification | Call/protocol conformance vectors for a driver's public API, with a worked CLI adapter example |
 | [LPDS-020](LPDS-020_Driver_Implementation_Lifecycle.md) | Driver Implementation Lifecycle | Phase/gate implementation and review process |
 
 (Numbering intentionally skips 016 and starts renumbering-free at 017 to preserve
@@ -57,7 +57,8 @@ traceability with this series' origin document set.)
 
 ## Provenance
 
-This standard was migrated and generalized from the Robot-Framework-specific "RFDS"
-driver standard used in an earlier, framework-coupled driver project. The generalization
-work stripped every Robot Framework dependency out of the driver-design requirements and
-moved framework integration into the optional adapter concept described above.
+This standard was migrated and generalized from an earlier, single-automation-framework-
+specific "RFDS" driver standard used in an earlier, framework-coupled driver project. The
+generalization work stripped every automation-framework dependency out of the
+driver-design requirements and moved framework integration into the optional adapter
+concept described above.

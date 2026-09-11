@@ -55,7 +55,7 @@ LPDS-008 covers:
 
 - Python and driver operational logs;
 - framework-agnostic authoritative test-result records (JSON and/or JUnit-style XML) produced directly from a plain-Python conformance test run (for example, a pytest session run with no automation framework installed);
-- optional adapter-native derived reports (for example a Robot Framework `log.html`/`report.html`, a pytest HTML report, or an equivalent presentation from any other framework adapter) generated from that same authoritative result;
+- optional adapter-native derived reports (for example a pytest HTML report, a CLI adapter's own summary output, or an equivalent presentation from any other framework adapter) generated from that same authoritative result;
 - test-run, suite, test, method invocation, operation, measurement, error, safety, cleanup, and protocol evidence;
 - JSON documents and JSON Lines event streams;
 - canonical CSV measurement and coverage exports;
@@ -243,7 +243,7 @@ Minimum evidence for application or driver operation outside a formal test:
 E0 plus:
 
 - the framework-agnostic authoritative test-result record (JSON and/or JUnit-style XML) for the conformance test run;
-- any adapter-native derived report (for example a Robot Framework `log.html`/`report.html`, or a pytest HTML report) generated from that authoritative record;
+- any adapter-native derived report (for example a pytest HTML report, or a CLI adapter's own summary output) generated from that authoritative record;
 - suite/test identifiers;
 - test result totals;
 - test parameters/fixtures or a redacted effective-parameter record;
@@ -436,7 +436,7 @@ results/<activity>/<driver_or_bench>/<timestamp>_<run_id>/
     └── provenance.json
 ```
 
-`test_results/results.json` and/or `results.xml` are the authoritative, framework-agnostic test-result artifacts, produced directly from the plain-Python conformance test run. `test_results/adapter_report/` holds any adapter-native derived presentation (a Robot Framework `log.html`/`report.html`, a pytest HTML report, or equivalent) generated from them.
+`test_results/results.json` and/or `results.xml` are the authoritative, framework-agnostic test-result artifacts, produced directly from the plain-Python conformance test run. `test_results/adapter_report/` holds any adapter-native derived presentation (a pytest HTML report, a CLI adapter's own summary output, or equivalent) generated from them.
 
 Only applicable files are mandatory. `run_summary.json` and `evidence_manifest.json` shall state why expected files are absent.
 
@@ -522,7 +522,7 @@ Every formal conformance test run shall produce a framework-agnostic authoritati
 - pass/fail/error/skip counts;
 - setup and teardown results.
 
-This authoritative record shall be JSON and/or JUnit-style XML generated directly from the plain-Python test run (for example, from a pytest session run with no automation framework installed), independent of any automation-framework adapter. Any adapter-native report (for example a Robot Framework `log.html`/`report.html`) is a derived presentation of the same underlying result — it shall not itself be treated as the authoritative record.
+This authoritative record shall be JSON and/or JUnit-style XML generated directly from the plain-Python test run (for example, from a pytest session run with no automation framework installed), independent of any automation-framework adapter. Any adapter-native report (for example a pytest HTML report) is a derived presentation of the same underlying result — it shall not itself be treated as the authoritative record.
 
 ### 14.2 File placement
 
@@ -538,7 +538,7 @@ CI workflows should generate a JUnit-style `results.xml` when supported by the t
 
 ### 14.5 Adapter and test-runner integration
 
-LPDS drivers and platform components should provide or use a generic Python hook/callback mechanism — for example a pytest plugin, a Robot Framework listener registered by an RF adapter, or an equivalent integration point in any other automation-framework adapter — that records:
+LPDS drivers and platform components should provide or use a generic Python hook/callback mechanism — for example a pytest plugin hook, or an equivalent integration point in any other automation-framework adapter — that records:
 
 - suite and test IDs;
 - method start and end;
@@ -561,20 +561,14 @@ def on_method_call(event):
 test_context.add_method_hook(on_method_call)
 ```
 
-**Example: Robot Framework adapter**
+**Example: pytest plugin adapter**
 
 ```python
-# A Robot Framework adapter can translate RF's own listener callbacks into
+# A pytest plugin can translate pytest's own hook callbacks into
 # the same generic method-hook calls shown above. The driver itself has no
-# knowledge of Robot Framework or its listener API.
-class RobotEvidenceListener:
-    ROBOT_LISTENER_API_VERSION = 3
-
-    def start_keyword(self, name, attrs):
-        on_method_call({"phase": "start", "method": name, "args": attrs["args"]})
-
-    def end_keyword(self, name, attrs):
-        on_method_call({"phase": "end", "method": name, "status": attrs["status"]})
+# knowledge of pytest or its hook API.
+def pytest_runtest_logreport(report):
+    on_method_call({"phase": report.when, "method": report.nodeid, "status": report.outcome})
 ```
 
 ### 14.6 Logging level mapping
@@ -597,7 +591,7 @@ Adapter-native reports (or any derived HTML/PDF presentation) may link to screen
 
 ### 14.8 Merged and post-processed outputs
 
-When test-result artifacts are merged or post-processed by a result-combining tool (for example, merging JUnit XML from parallel pytest-xdist workers, or Robot Framework's Rebot tool inside an RF adapter):
+When test-result artifacts are merged or post-processed by a result-combining tool (for example, merging JUnit XML from parallel pytest-xdist workers, or an adapter-native report-merge tool):
 
 - original per-run authoritative test-result files shall be preserved;
 - merged output shall be marked as derived;
@@ -1536,7 +1530,7 @@ The shared LPDS platform or `BaseInstrument` should provide common interfaces eq
 
 Concrete drivers shall use the common infrastructure rather than independently inventing incompatible schemas.
 
-A driver's public Python API may expose diagnostics and evidence-export methods as defined by LPDS-002 and the driver capability model. Any automation-framework adapter may additionally expose these as its own native bindings (Robot Framework keywords, pytest fixtures, CLI commands, REST endpoints, ...). Internal evidence implementation details shall not be exposed as uncontrolled public API surface.
+A driver's public Python API may expose diagnostics and evidence-export methods as defined by LPDS-002 and the driver capability model. Any automation-framework adapter may additionally expose these as its own native bindings (pytest fixtures, CLI commands, REST endpoints, ...). Internal evidence implementation details shall not be exposed as uncontrolled public API surface.
 
 ---
 
@@ -2045,23 +2039,23 @@ schema_version,run_id,suite_id,test_id,correlation_id,operation_id,sample_id,seq
 }
 ```
 
-**Example: Robot Framework adapter derived report**
+**Example: pytest adapter derived report**
 
-When an RF adapter is used in addition to the plain-Python conformance run, it produces an extra manifest entry for its own native report, explicitly marked as derived from the authoritative record above:
+When a pytest-based adapter is used in addition to the plain-Python conformance run, it produces an extra manifest entry for its own native HTML report, explicitly marked as derived from the authoritative record above:
 
 ```json
 {
   "path": "test_results/adapter_report/report.html",
   "role": "DERIVED_REPORT",
   "media_type": "text/html",
-  "schema": "robot.report",
-  "schema_version": "7.x",
+  "schema": "pytest-html.report",
+  "schema_version": "4.x",
   "size_bytes": 96110,
   "sha256": "9c21ab44f0...",
   "finalized_at": "2026-07-27T08:18:13.005Z",
   "producer": {
-    "name": "Robot Framework",
-    "version": "7.3"
+    "name": "pytest-html",
+    "version": "4.1"
   },
   "authoritative": false,
   "derived_from": ["test_results/results.json"],

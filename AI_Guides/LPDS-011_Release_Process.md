@@ -1062,7 +1062,7 @@ The main ZIP shall contain the complete GitHub-ready project under the stable ro
 - driver implementation;
 - tests;
 - conformance assets;
-- any bundled adapters (e.g. Robot Framework, pytest, CLI), each kept in its own subdirectory with adapter-specific tests and examples;
+- any bundled adapters (e.g. pytest, CLI, REST), each kept in its own subdirectory with adapter-specific tests and examples;
 - examples;
 - scripts;
 - guide;
@@ -1093,7 +1093,7 @@ Therefore:
 
 A separate evidence archive should contain:
 
-- complete conformance-test outputs (including any adapter-level test outputs, e.g. Robot Framework `output.xml`/`log.html`);
+- complete conformance-test outputs (including any adapter-level test outputs, e.g. a pytest adapter's JUnit XML and HTML report);
 - test and coverage reports;
 - LPDS-019 traces and matrices;
 - HIL logs and device identity;
@@ -1140,7 +1140,7 @@ The manifest shall include equivalent information to:
     "python": "<version>",
     "operating_system": "<value>",
     "build_backend": "<value>",
-    "adapters": {"robot_framework": "<version, if bundled>"}
+    "adapters": {"pytest": "<version, if bundled>"}
   },
   "tests": {
     "unit": "PASS",
@@ -1657,7 +1657,7 @@ A public release shall fail when any applicable condition exists:
 - [ ] README matches the exact release.
 - [ ] At least ten complete numbered examples exist or an approved exception is documented.
 - [ ] Every example can be run through packaged Windows/Linux scripts.
-- [ ] Setup, IDE, adapter (e.g. Robot Framework, pytest), hardware, and troubleshooting guides are current.
+- [ ] Setup, IDE, adapter (e.g. pytest, CLI), hardware, and troubleshooting guides are current.
 - [ ] API reference documentation is current.
 - [ ] Strict GitHub Pages build passes.
 - [ ] Compatibility, migration, safety, support, and hardware-validation pages are current.

@@ -9,7 +9,7 @@
    driver's design, public API, error handling, logging, testing, and release process.
    The core rule: the driver itself must be plain, framework-independent Python, fully
    usable and testable without any test-automation framework installed. If you also want
-   a Robot Framework, pytest-fixture, CLI, etc. binding, write it as a separate adapter
+   a pytest-fixture, CLI, REST, etc. binding, write it as a separate adapter
    per [LPDS-015](AI_Guides/LPDS-015_Plugin_and_Adapter_Architecture.md) — it should never
    live inside the driver itself.
 4. Recommended structure for a driver repo:

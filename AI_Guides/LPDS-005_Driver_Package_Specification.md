@@ -290,14 +290,13 @@ New LPDS driver projects shall use the following layout. Device-specific files m
 │       └── resources/
 │           └── ...
 ├── adapters/
-│   └── robotframework/
+│   └── cli/
 │       ├── __init__.py
-│       ├── keywords.py
+│       ├── commands.py
 │       ├── resources/
-│       │   ├── common.resource
-│       │   └── variables.example.yaml
+│       │   └── config.example.yaml
 │       ├── examples/
-│       │   ├── 01_*.robot
+│       │   ├── 01_*.sh
 │       │   └── ...
 │       └── tests/
 ├── ai/
@@ -448,12 +447,12 @@ A new LPDS driver shall use a `src/`-layout package: the installable driver pack
 
 The driver package shall be fully importable, constructible, and testable with only `src/<driver_name>/` on the Python path and no automation framework installed. It shall not import, reference, or depend on anything under `adapters/`.
 
-Any framework adapter shall live under `adapters/<framework_name>/` (for example `adapters/robotframework/`, `adapters/pytest/`), as a sibling of `src/`, never nested inside the driver package. An adapter:
+Any framework adapter shall live under `adapters/<framework_name>/` (for example `adapters/pytest/`, `adapters/cli/`), as a sibling of `src/`, never nested inside the driver package. An adapter:
 
 - shall depend on the driver package's public API only, typically via a normal Python import of the installed driver distribution;
 - shall not be imported by, or referenced from, any file under `src/<driver_name>/`;
 - shall contain no device, protocol, or transport logic of its own;
-- may be distributed as an optional extra of the same distribution (for example `pip install <driver_name>[robotframework]`) or as a separate sibling distribution, provided the dependency direction above is preserved;
+- may be distributed as an optional extra of the same distribution (for example `pip install <driver_name>[cli]`) or as a separate sibling distribution, provided the dependency direction above is preserved;
 - is entirely optional — a conforming driver package may ship with zero adapters.
 
 A reviewed legacy or upstream driver package may remain separate only when restructuring would create unacceptable compatibility risk. The architecture review shall document the exception, and the driver package shall remain the sole authority for device semantics and the public API.
@@ -675,7 +674,7 @@ The minimum example set should cover, where applicable:
 
 `examples/README.md` shall index every example with its purpose, mode, prerequisites, required variables, expected result, and exact PowerShell, Batch where supported, and Linux shell command.
 
-An adapter may additionally provide its own framework-specific example set (for example `.robot` suites under `adapters/robotframework/examples/`). Adapter examples supplement, but do not count toward, the ten-example minimum defined above, which applies to the plain-Python driver examples in `examples/`.
+An adapter may additionally provide its own framework-specific example set (for example shell scripts under `adapters/cli/examples/`). Adapter examples supplement, but do not count toward, the ten-example minimum defined above, which applies to the plain-Python driver examples in `examples/`.
 
 ---
 
@@ -714,7 +713,7 @@ Runners shall:
 - `run_hil_tests.*` shall reject missing enablement, resources, or safety variables.
 - `run_call_protocol_conformance.*` shall execute LPDS-019, preserve the pytest exit code, and print the timestamped result location.
 
-An adapter directory may provide its own additional runner (for example to execute an installed Robot Framework adapter's `.robot` examples). Such adapter-specific runners are additional to, and do not replace, the driver-level runners above.
+An adapter directory may provide its own additional runner (for example to execute an installed CLI adapter's shell-script examples). Such adapter-specific runners are additional to, and do not replace, the driver-level runners above.
 
 ### 12.4 Validation and build scripts
 
@@ -812,7 +811,7 @@ Generated runtime results may be copied into this location only after review and
 4. installing the driver project in editable mode;
 5. installing development, hardware, documentation, and (where applicable) adapter extras;
 6. configuring the IDE's Python interpreter and type-checking support for the driver package;
-7. where an adapter is installed, configuring any IDE support the adapter's framework needs (for example associating `.robot` and `.resource` files for the Robot Framework adapter);
+7. where an adapter is installed, configuring any IDE support the adapter's framework needs (for example enabling a CLI adapter's shell-completion or linting support);
 8. creating a run/debug configuration for a plain Python example script;
 9. supplying serial, VISA, LAN, USB, SDK, or other resource variables;
 10. running a simulated example;
@@ -888,7 +887,7 @@ Requirements:
 - effective configuration shall be exportable with secrets redacted;
 - HIL resource templates shall identify aliases, transport fields, safety limits, and exclusivity rules without providing a real bench definition.
 
-An adapter directory (for example `adapters/robotframework/resources/`) may provide reusable, framework-specific resource and variable-template files for that adapter. Such files shall not duplicate the authoritative Python public API defined by the driver package.
+An adapter directory (for example `adapters/cli/resources/`) may provide reusable, framework-specific resource and variable-template files for that adapter. Such files shall not duplicate the authoritative Python public API defined by the driver package.
 
 ---
 

@@ -213,7 +213,7 @@ The following conventions are mandatory:
 | Type alias | `PascalCase` | `ChannelIdentifier` |
 | Private member | leading underscore | `_parse_response` |
 
-Where an automation-framework adapter re-exposes a method under a framework-specific display name (for example a Robot Framework keyword rendered in Title Case), that display name is defined by the adapter per LPDS-002 and shall map deterministically to exactly one canonical `snake_case` Python method; it does not replace the canonical name in this table.
+Where an automation-framework adapter re-exposes a method under a framework-specific display name (for example a CLI adapter's kebab-case subcommand), that display name is defined by the adapter per LPDS-002 and shall map deterministically to exactly one canonical `snake_case` Python method; it does not replace the canonical name in this table.
 
 Names shall describe domain meaning. Single-letter names are permitted only for conventional short-loop indices, coordinates, or mathematical expressions with local scope.
 
@@ -255,7 +255,7 @@ Code shall:
 Production drivers should separate these responsibilities:
 
 ```text
-Automation-framework adapter (optional: Robot Framework, pytest, CLI, REST, ...)
+Automation-framework adapter (optional: pytest, CLI, REST, ...)
                 ↓
 public driver API
                 ↓
@@ -392,7 +392,7 @@ The driver's own public API should use the most expressive documented Python typ
 - lists or dictionaries with stable schemas;
 - typed Python result objects (dataclasses, enums, `NamedTuple`) once the schema is documented and stable.
 
-Nothing in this section restricts the driver to types that happen to be convenient for a particular automation framework. When an adapter targets a framework with narrower type support (for example, a Robot Framework keyword binding that expects only Robot Framework-compatible values), converting the driver's return value into that framework's representation is the adapter's responsibility, not the driver's.
+Nothing in this section restricts the driver to types that happen to be convenient for a particular automation framework. When an adapter targets a framework with narrower type support (for example, a REST adapter that expects only JSON-serializable values), converting the driver's return value into that framework's representation is the adapter's responsibility, not the driver's.
 
 ### 8.5 Deprecation
 
@@ -449,7 +449,7 @@ The release branch shall have no unexplained static type errors in production co
 
 It is permitted at boundaries that are genuinely dynamic, including:
 
-- automation-framework adapter runtime metadata (for example a Robot Framework keyword call's raw arguments before conversion);
+- automation-framework adapter runtime metadata (for example a CLI subcommand's raw arguments before conversion);
 - vendor SDKs without usable type information;
 - decoded JSON before validation;
 - plugin interfaces whose schema is external.
@@ -508,7 +508,7 @@ Public API methods shall be intentionally exposed through the driver's declared 
 
 A helper method shall not become part of the public API accidentally.
 
-Where an automation-framework adapter wraps the driver, the adapter shall expose only methods that are already part of the driver's declared public API. Internal methods shall remain private or excluded using the adapter framework's supported mechanism (for example Robot Framework's keyword decoration together with `auto_keywords=False`).
+Where an automation-framework adapter wraps the driver, the adapter shall expose only methods that are already part of the driver's declared public API. Internal methods shall remain private or excluded using the adapter framework's supported mechanism (for example a CLI framework's explicit command-registration decorator, rather than reflecting over every driver attribute).
 
 ### 10.2 Method naming
 
@@ -521,7 +521,7 @@ Public method names shall:
 
 Python method names shall remain valid `snake_case` identifiers.
 
-Where an automation-framework adapter re-exposes a method under a different display name or calling convention (for example a Title Case Robot Framework keyword, or a CLI subcommand), that display name is defined by the adapter per LPDS-002 and shall map deterministically to exactly one canonical Python method; it does not replace the canonical `snake_case` name.
+Where an automation-framework adapter re-exposes a method under a different display name or calling convention (for example a kebab-case CLI subcommand, or a REST route name), that display name is defined by the adapter per LPDS-002 and shall map deterministically to exactly one canonical Python method; it does not replace the canonical `snake_case` name.
 
 ### 10.3 Method documentation
 
@@ -547,13 +547,13 @@ Messages shall not expose an internal traceback as the only explanation.
 
 The original exception shall be preserved through exception chaining when a higher-level exception is raised.
 
-An adapter that translates a driver exception into a framework-specific failure (for example a Robot Framework keyword failure) shall preserve the original message and category rather than collapsing it into a generic failure.
+An adapter that translates a driver exception into a framework-specific failure (for example a pytest assertion failure) shall preserve the original message and category rather than collapsing it into a generic failure.
 
 ### 10.5 Logging from public API methods
 
 Public API method implementation shall not use `print()` for normal diagnostics.
 
-An automation-framework adapter may bridge Python logging output into its own framework-specific log sink (for example `robot.api.logger`) at the adapter layer. Core and transport layers shall use the Python logging standard described in Section 12.
+An automation-framework adapter may bridge Python logging output into its own framework-specific log sink (for example a pytest capture handler) at the adapter layer. Core and transport layers shall use the Python logging standard described in Section 12.
 
 ### 10.6 Method aliases
 
@@ -635,12 +635,12 @@ def set_output_voltage(
 
 The exact section labels may be adapted for the chosen documentation generator (for example Sphinx or mkdocs) readability, but the semantic content shall remain.
 
-Example: Robot Framework adapter
+Example: CLI adapter
 
-Where a Robot Framework adapter wraps this method as a keyword, its own keyword documentation may show the framework-specific call while referring back to the driver docstring above for full argument and exception detail:
+Where a CLI adapter wraps this method as a subcommand, its own command documentation may show the framework-specific call while referring back to the driver docstring above for full argument and exception detail:
 
-```robotframework
-Set Output Voltage    1    5.0
+```text
+$ example-driver set-output-voltage --channel 1 --voltage 5.0
 ```
 
 ### 11.5 Comments
@@ -792,7 +792,7 @@ A value shall be redacted before it reaches the logging call.
 
 ### 12.7 Automation-framework log bridge
 
-When a driver's logs are surfaced through an automation-framework adapter (Robot Framework, pytest, a CLI, or otherwise):
+When a driver's logs are surfaced through an automation-framework adapter (pytest, a CLI, or otherwise):
 
 - the bridge shall preserve the original severity where practical;
 - the bridge shall not duplicate every message into both the Python log and the framework's own log;
@@ -1422,7 +1422,7 @@ show_missing = true
 skip_covered = false
 ```
 
-An automation-framework adapter (a Robot Framework library, a pytest plugin, a CLI, ...) that wraps this driver is normally packaged and versioned separately, with its own `pyproject.toml` declaring the automation framework as a dependency and this driver package as its one required dependency.
+An automation-framework adapter (a pytest plugin, a CLI, a REST service, ...) that wraps this driver is normally packaged and versioned separately, with its own `pyproject.toml` declaring the automation framework as a dependency and this driver package as its one required dependency.
 
 ---
 

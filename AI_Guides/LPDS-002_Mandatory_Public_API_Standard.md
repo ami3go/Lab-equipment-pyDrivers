@@ -18,7 +18,7 @@ The standard has four goals:
 3. provide a stable contract that can be inventoried and tested automatically;
 4. prevent private helpers, transport details, and accidental methods from becoming part of the public Python API.
 
-The canonical public interface of an LPDS driver is its public Python API: the explicitly registered, documented set of public methods on the driver class, fully usable from a plain Python session with no test-automation framework installed. Any automation-framework adapter (Robot Framework, pytest, a CLI, a REST layer, a GUI test bench, ...) is a separate, thin translation layer built on top of this API. An adapter shall not contradict the driver's public Python API, and shall not define behavior that does not trace back to exactly one canonical driver method.
+The canonical public interface of an LPDS driver is its public Python API: the explicitly registered, documented set of public methods on the driver class, fully usable from a plain Python session with no test-automation framework installed. Any automation-framework adapter (pytest, a CLI, a REST layer, a GUI test bench, ...) is a separate, thin translation layer built on top of this API. An adapter shall not contradict the driver's public Python API, and shall not define behavior that does not trace back to exactly one canonical driver method.
 
 ---
 
@@ -78,7 +78,7 @@ Those subjects are covered by device-specific requirements and other LPDS specif
 An LPDS driver may contain the following layers:
 
 ```text
-automation-framework adapter (Robot Framework, pytest, CLI, REST, ...)
+automation-framework adapter (pytest, CLI, REST, ...)
         ↓
 canonical public Python API (driver class methods)
         ↓
@@ -108,14 +108,14 @@ The canonical API shall:
 
 ### 4.2 Framework adapters
 
-A driver may be wrapped by one or more framework adapters (Robot Framework, pytest fixtures, a CLI, a REST layer, ...) for use inside a specific test-automation environment.
+A driver may be wrapped by one or more framework adapters (pytest fixtures, a CLI, a REST layer, ...) for use inside a specific test-automation environment.
 
 When an adapter is provided:
 
 - adapter operations should map one-to-one to canonical public Python methods where practical;
 - an adapter shall not introduce device logic, validation, or state of its own — it only translates calls and results between its framework and the driver's public API;
 - argument names, defaults, return values, and exceptions exposed by the adapter shall remain semantically equivalent to the underlying Python API;
-- an adapter's own naming convention (for example, a Robot Framework adapter's Title Case keyword names) is derived mechanically from the driver's `snake_case` method names and is not part of the driver's public API contract;
+- an adapter's own naming convention (for example, a CLI adapter's kebab-case subcommand names, or a REST adapter's route names) is derived mechanically from the driver's `snake_case` method names and is not part of the driver's public API contract;
 - adapters are documented and verified separately from the driver (thin translation-correctness tests, not device-logic tests).
 
 ### 4.3 Internal APIs
@@ -241,7 +241,7 @@ send_data
 open_channel_3_relay
 ```
 
-An automation-framework adapter may derive its own, framework-idiomatic name from a canonical method name — for example, a Robot Framework adapter mechanically converting `set_dc_voltage` into the keyword `Set DC Voltage` by splitting on underscores and title-casing each word. This translation is entirely the adapter's responsibility; the driver's canonical name is always the `snake_case` method name defined here.
+An automation-framework adapter may derive its own, framework-idiomatic name from a canonical method name — for example, a CLI adapter mechanically converting `set_dc_voltage` into the subcommand `set-dc-voltage` by replacing underscores with hyphens. This translation is entirely the adapter's responsibility; the driver's canonical name is always the `snake_case` method name defined here.
 
 ### 7.2 Verb semantics
 
@@ -850,7 +850,7 @@ Public methods should avoid `*args` and unstructured `**kwargs` because they wea
 
 ### 11.1 Permitted return types
 
-Public methods shall return only adapter-safe values — plain data types that any adapter (Robot Framework, pytest, REST, CLI, ...) can consume without special-casing:
+Public methods shall return only adapter-safe values — plain data types that any adapter (pytest, REST, CLI, ...) can consume without special-casing:
 
 - `None`;
 - `bool`;
@@ -1598,31 +1598,33 @@ finally:
     driver.disconnect(alias="psu")
 ```
 
-*Example: Robot Framework adapter.* An adapter package built on top of the driver could expose the same operations as keywords, with keyword names mechanically derived from the method names (see Section 7.1):
+*Example: pytest fixture adapter.* An adapter package built on top of the driver could expose the same operations as a pytest fixture, with fixture and helper names mechanically derived from the method names (see Section 7.1):
 
-```robotframework
-*** Settings ***
-Library    example_driver.adapters.robotframework.ExampleDriverKeywords
-Suite Teardown    Safe Driver Teardown
+```python
+# adapters/pytest/example_driver_fixtures.py
+import pytest
+from example_driver import ExampleDriver
 
-*** Test Cases ***
-Read Device Identity
-    ${state}=    Connect
-    ...    resource=TCPIP0::192.168.0.55::5025::SOCKET
-    ...    alias=psu
-    ...    timeout_s=5.0
-    Should Be True    ${state}[connected]
 
-    ${ok}=    Check Communication    alias=psu
-    Should Be True    ${ok}
+@pytest.fixture
+def psu():
+    driver = ExampleDriver()
+    state = driver.connect(
+        resource="TCPIP0::192.168.0.55::5025::SOCKET",
+        timeout_s=5.0,
+    )
+    assert state["connected"]
+    try:
+        yield driver
+    finally:
+        if "safe_shutdown" in driver.get_driver_capabilities():
+            driver.safe_shutdown()
+        driver.disconnect()
 
-    ${identity}=    Get Identity    alias=psu
-    Should Not Be Empty    ${identity}
 
-*** Keywords ***
-Safe Driver Teardown
-    Run Keyword And Ignore Error    Safe Shutdown    alias=psu
-    Disconnect    alias=psu
+def test_read_device_identity(psu):
+    assert psu.check_communication()
+    assert psu.get_identity()
 ```
 
 A driver that does not declare `safe_shutdown` shall omit that teardown step (in Python or in any adapter) and use `disconnect` only.

@@ -240,7 +240,7 @@ This methodology provides:
 # Note on Adapters
 
 The gates above apply to the driver itself. If the phase also delivers
-one or more adapters (Robot Framework, pytest, CLI, REST, etc.) for
+one or more adapters (pytest, CLI, REST, etc.) for
 the driver, adapter work follows its own lighter-weight lifecycle: an
 adapter contains no device logic to gate, so it only requires a thin
 implementation-and-translation-verification pass against the driver's

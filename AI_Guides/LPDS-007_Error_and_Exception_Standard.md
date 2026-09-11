@@ -547,7 +547,7 @@ A driver shall signal an unrecoverable condition — for example by raising an e
 - continuing could cause unsafe device behavior;
 - setup cannot establish a mandatory resource and the caller requires unrecoverable behavior to be reported.
 
-A test-automation adapter may translate this signal into its own framework's fatal or suite-aborting mechanism (such as a Robot Framework fatal error) when appropriate. The driver itself shall not depend on, or be coupled to, any specific framework's fatal-failure mechanism to communicate this condition — the exception's `recovery_class` and type are the framework-agnostic signal.
+A test-automation adapter may translate this signal into its own framework's fatal or suite-aborting mechanism (such as a pytest session-abort) when appropriate. The driver itself shall not depend on, or be coupled to, any specific framework's fatal-failure mechanism to communicate this condition — the exception's `recovery_class` and type are the framework-agnostic signal.
 
 A normal timeout or one failed method shall not automatically become an unrecoverable failure.
 
@@ -1248,26 +1248,26 @@ def query_identity(transport: Any, timeout_s: float) -> str:
 
 The reference pattern does not replace the required driver-specific error catalogue, state handling, redaction, logging, and tests.
 
-### Example: Robot Framework adapter
+### Example: CLI adapter
 
-The driver above is fully usable from plain Python with no test-automation framework installed. A thin Robot Framework adapter may wrap it like this, translating raised `DriverError` instances into Robot Framework keyword failures without adding any device logic of its own:
+The driver above is fully usable from plain Python with no test-automation framework installed. A thin CLI adapter may wrap it like this, translating raised `DriverError` instances into a non-zero exit code and an error message without adding any device logic of its own:
 
 ```python
-from robot.api.deco import keyword, library
+import sys
 
 from example_driver import ExampleDriver, DriverError
 
 
-@library
-class ExampleDriverLibrary:
-    def __init__(self, resource: str) -> None:
-        self._driver = ExampleDriver(resource)
-
-    @keyword("Get Identity")
-    def get_identity(self) -> str:
-        # DriverError propagates unchanged; Robot Framework reports it as a
-        # keyword failure using the exception's canonical str() message.
-        return self._driver.get_identity()
+def main(resource: str) -> int:
+    driver = ExampleDriver(resource)
+    try:
+        print(driver.get_identity())
+    except DriverError as exc:
+        # DriverError propagates unchanged; the CLI reports it as a
+        # non-zero exit using the exception's canonical str() message.
+        print(str(exc), file=sys.stderr)
+        return 1
+    return 0
 ```
 
 ---

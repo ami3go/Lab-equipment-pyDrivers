@@ -59,11 +59,11 @@ This section states the architectural thesis that every subordinate LPDS specifi
 A **driver** is a plain, framework-independent Python class exposing a documented public API (typed methods, properties, docstrings) per LPDS-002. A driver shall:
 
 - be fully constructible, controllable, and testable from a plain Python or pytest session with **no** test-automation framework installed;
-- not import, subclass, decorate with, or otherwise depend on Robot Framework, a pytest plugin, or any other automation or GUI framework;
+- not import, subclass, decorate with, or otherwise depend on a pytest plugin, or any other test-automation or GUI framework;
 - express all device semantics, protocol handling, transport I/O, state, error handling, logging, and evidence generation entirely in terms of its own public Python API and LPDS-003's shared base class.
 
 **LPDS-001-DA-002 — Adapter definition**
-An **adapter** is a separate, thin translation layer that exposes an already-verified driver's public API to one specific automation framework or interface: Robot Framework keywords, pytest fixtures, a CLI, a REST endpoint, a GUI test bench, or similar. An adapter shall:
+An **adapter** is a separate, thin translation layer that exposes an already-verified driver's public API to one specific automation framework or interface: pytest fixtures, a CLI, a REST endpoint, a GUI test bench, or similar. An adapter shall:
 
 - contain no device logic, protocol logic, or transport logic of its own;
 - translate calls and results between its framework and the driver's public API only;
@@ -79,7 +79,7 @@ A driver shall be designed, implemented, and verified completely on its own publ
 This separation exists so that:
 
 1. a driver can be fully trusted, reviewed, and released without requiring any particular automation framework to be installed, working, or even chosen yet;
-2. the same verified driver logic can be reused unchanged by multiple frameworks and consumers (Robot Framework, pytest, a CLI, a GUI test bench, an AI agent calling Python directly);
+2. the same verified driver logic can be reused unchanged by multiple frameworks and consumers (pytest, a CLI, a REST layer, a GUI test bench, an AI agent calling Python directly);
 3. a defect is never simultaneously a device-logic defect and a framework-translation defect — it is always attributable to exactly one side of the boundary;
 4. adding, replacing, or dropping support for an automation framework never requires touching device logic.
 
@@ -468,7 +468,7 @@ This layer may contain reusable test fixtures, bench-level helpers, test templat
 
 Responsibilities, when an adapter is present:
 
-- translate one automation framework's calling convention (Robot Framework keywords, pytest fixtures, a CLI, a REST endpoint, ...) into calls on the driver's public API;
+- translate one automation framework's calling convention (pytest fixtures, a CLI, a REST endpoint, ...) into calls on the driver's public API;
 - translate the driver's return values and raised exceptions back into that framework's native success/failure representation;
 - add no device logic, protocol logic, or transport logic of its own;
 - remain a separate, independently versioned and testable component per LPDS-015.
@@ -684,8 +684,8 @@ This tree illustrates the platform-level minimum only; LPDS-005 §6 is authorita
 │       ├── protocol/
 │       └── transport/
 ├── adapters/
-│   ├── robotframework/    (optional)
-│   └── pytest/            (optional)
+│   ├── pytest/             (optional)
+│   └── cli/                (optional)
 ├── ai/
 │   ├── ai_contract.yaml
 │   └── ai_contract.lock
@@ -759,7 +759,7 @@ driver_class: Keysight34970Driver
 supported_devices: []
 supported_transports: []
 python_versions: []
-adapters: []            # e.g. [{name: robotframework, version: "1.0"}]
+adapters: []            # e.g. [{name: pytest, version: "1.0"}]
 
 lpds_compliance:
   LPDS-001: "1.1"
@@ -1864,11 +1864,11 @@ LPDS-001-SAFE-003,P1,src/example_driver/driver.py,tests/integration/test_safe_te
 
 ### Migration to LPDS
 
-Generalized from RFDS-001 v1.1 (Robot-Framework-specific platform requirements) into a framework-independent Python driver platform standard. Major changes:
+Generalized from an earlier, single-automation-framework-specific platform requirements document into a framework-independent Python driver platform standard. Major changes:
 
 - added §3, "Driver vs Adapter Architecture," stating the platform's core thesis: a driver is plain framework-independent Python, verified standalone; any automation framework is an optional, separately versioned adapter;
-- renamed every "Robot Framework keyword/library" concept to "public Python method" / "driver," with Robot Framework demoted to one example consumer among possible adapters;
-- updated the canonical package tree to the `src/`-layout plus optional `adapters/` directory defined by LPDS-005, dropping the `rf_` naming prefix;
+- renamed every framework-specific keyword/library concept to "public Python method" / "driver," with no automation framework privileged over any other as an adapter target;
+- updated the canonical package tree to the `src/`-layout plus optional `adapters/` directory defined by LPDS-005, dropping the prior source project's naming prefix;
 - extended test levels, review dimensions, compatibility surfaces, and acceptance criteria to include adapter translation-correctness as a distinct, separately-scored concern;
 - renumbered sections after inserting §3; no other document references LPDS-001 by internal section number, so this was judged safe.
 

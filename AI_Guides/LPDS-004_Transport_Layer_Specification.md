@@ -184,9 +184,9 @@ Driver (plain Python)
         └── Simulator/spy
 
 Framework adapter(s) — optional, added after the driver is verified
-├── Robot Framework keyword adapter
 ├── pytest fixture adapter
-├── CLI or REST adapter
+├── CLI adapter
+├── REST adapter
 └── ... each wraps "Public driver API" above and contains no device logic
 ```
 
@@ -576,7 +576,7 @@ Secrets shall not appear in:
 
 - exception messages;
 - trace payload previews;
-- framework adapter logs (Robot Framework, pytest, or otherwise);
+- framework adapter logs (pytest, or otherwise);
 - generated evidence;
 - README examples;
 - AI contracts.
@@ -1455,9 +1455,9 @@ transport:
 
 ### 28.1 Internal status
 
-The transport interface is an internal driver contract. It shall not automatically expose all transport methods as public methods on the driver's public API, and no framework adapter shall expose transport methods directly as framework-level operations (Robot Framework keywords, pytest fixtures, CLI commands, or otherwise).
+The transport interface is an internal driver contract. It shall not automatically expose all transport methods as public methods on the driver's public API, and no framework adapter shall expose transport methods directly as framework-level operations (pytest fixtures, CLI commands, or otherwise).
 
-Public connection methods on the driver's public API shall delegate to the driver lifecycle layer, which then opens or closes the configured transport. A framework adapter's connection binding (for example, a Robot Framework `Connect` keyword) shall call only the driver's public connection method, never the transport directly.
+Public connection methods on the driver's public API shall delegate to the driver lifecycle layer, which then opens or closes the configured transport. A framework adapter's connection binding (for example, a CLI `connect` subcommand) shall call only the driver's public connection method, never the transport directly.
 
 ### 28.2 Framework-compatible results
 

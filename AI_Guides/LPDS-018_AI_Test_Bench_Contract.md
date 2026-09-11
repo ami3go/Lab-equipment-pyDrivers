@@ -23,7 +23,7 @@ class Bench:
         self.safety = BenchSafetyPolicy(...)
 ```
 
-A generated test plan operates directly on these driver instances by calling their public API methods. Where a test-automation framework (Robot Framework, pytest, a CLI, a REST layer, …) is used to run that plan, a thin adapter for each driver translates the plan's driver-instance calls into that framework's idioms; the bench contract itself makes no assumption about which framework, if any, is in use, and is unaffected by whether a given deployed driver has zero, one, or several adapters available.
+A generated test plan operates directly on these driver instances by calling their public API methods. Where a test-automation framework (pytest, a CLI, a REST layer, …) is used to run that plan, a thin adapter for each driver translates the plan's driver-instance calls into that framework's idioms; the bench contract itself makes no assumption about which framework, if any, is in use, and is unaffected by whether a given deployed driver has zero, one, or several adapters available.
 
 LPDS-018 is the sole normative source for the structure and required fields of `system_ai_contract.yaml`.
 

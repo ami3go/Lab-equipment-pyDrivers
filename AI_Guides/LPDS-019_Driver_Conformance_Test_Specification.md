@@ -36,9 +36,9 @@ The test shall prove that every supported public method on a driver's plain Pyth
 7. reports protocol errors, malformed responses, and timeouts correctly;
 8. remains traceable to recorded protocol evidence.
 
-LPDS-019 verifies **driver callability and driver-to-device protocol conformance only**, and it verifies both **entirely against the driver's plain Python public API**. No automation framework — Robot Framework, a CLI, a REST layer, a GUI test bench, or anything else — needs to be installed to execute or satisfy this specification. A driver is conformant, or it is not, independent of which framework (if any) is later layered on top of it.
+LPDS-019 verifies **driver callability and driver-to-device protocol conformance only**, and it verifies both **entirely against the driver's plain Python public API**. No automation framework — a CLI, pytest, a REST layer, a GUI test bench, or anything else — needs to be installed to execute or satisfy this specification. A driver is conformant, or it is not, independent of which framework (if any) is later layered on top of it.
 
-Where a framework-specific adapter exists, its own conformance is a thin, separate concern: an adapter is conformant when each of its exposed operations is a faithful pass-through to an already-LPDS-019-conformant driver method. This relationship is illustrated, non-normatively, in Appendix B using a Robot Framework adapter as one example.
+Where a framework-specific adapter exists, its own conformance is a thin, separate concern: an adapter is conformant when each of its exposed operations is a faithful pass-through to an already-LPDS-019-conformant driver method. This relationship is illustrated, non-normatively, in Appendix B using a CLI adapter as one example.
 
 ---
 
@@ -896,26 +896,26 @@ The following subjects were removed from LPDS-019 scope:
 
 ---
 
-## Appendix B — Example (Non-Normative): Robot Framework Adapter Conformance Mapping
+## Appendix B — Example (Non-Normative): CLI Adapter Conformance Mapping
 
-> **This appendix is illustrative only.** It is not a requirement of LPDS-019, and Robot Framework is not a mandated or implied consumer of any LPDS driver. It exists to show, briefly, how the driver-level conformance vectors above map onto **one possible** framework adapter. The same mapping pattern applies equally to a CLI adapter, a REST adapter, a GUI test-bench adapter, or any other thin translation layer.
+> **This appendix is illustrative only.** It is not a requirement of LPDS-019, and no particular automation framework is a mandated or implied consumer of any LPDS driver. It exists to show, briefly, how the driver-level conformance vectors above map onto **one possible** framework adapter. The same mapping pattern applies equally to a pytest adapter, a REST adapter, a GUI test-bench adapter, or any other thin translation layer.
 
 ### B.1 The pass-through principle
 
-An adapter contains no device logic. A Robot Framework adapter keyword is conformant **if and only if**:
+An adapter contains no device logic. A CLI adapter command is conformant **if and only if**:
 
 1. the driver method it wraps is itself LPDS-019 conformant (proven by the vectors in §7.3, independent of any framework); and
-2. the keyword forwards arguments to the driver method unchanged (after only Robot Framework's own argument-string conversion);
-3. the keyword forwards the driver method's return value unchanged (after only the serialization Robot Framework requires to display or pass along a result);
-4. the keyword forwards a raised `DriverError` as a Robot Framework keyword failure without swallowing, downgrading, or reclassifying it.
+2. the command forwards arguments to the driver method unchanged (after only the CLI framework's own argument-string conversion);
+3. the command forwards the driver method's return value unchanged (after only the serialization the CLI framework requires to display or pass along a result);
+4. the command forwards a raised `DriverError` as a CLI command failure without swallowing, downgrading, or reclassifying it.
 
 Adapter conformance testing therefore does not re-verify protocol behavior (that is already proven at the driver level) — it verifies only that the translation layer is faithful.
 
 ### B.2 Illustrative adapter
 
 ```python
-class PowerSupplyLibrary:
-    """Thin Robot Framework adapter over PowerSupplyDriver."""
+class PowerSupplyCli:
+    """Thin CLI adapter over PowerSupplyDriver."""
 
     def __init__(self, driver: PowerSupplyDriver):
         self._driver = driver
@@ -930,32 +930,32 @@ class PowerSupplyLibrary:
 ### B.3 Illustrative adapter-level test
 
 ```python
-def test_set_dc_voltage_keyword_is_a_thin_passthrough(mocker):
+def test_set_dc_voltage_command_is_a_thin_passthrough(mocker):
     driver = mocker.Mock(spec=PowerSupplyDriver)
-    library = PowerSupplyLibrary(driver)
+    cli = PowerSupplyCli(driver)
 
-    library.set_dc_voltage("1", "5.0")
+    cli.set_dc_voltage("1", "5.0")
 
     driver.set_dc_voltage.assert_called_once_with(channel=1, voltage=5.0)
 
 
-def test_get_identity_keyword_forwards_driver_error(mocker):
+def test_get_identity_command_forwards_driver_error(mocker):
     driver = mocker.Mock(spec=PowerSupplyDriver)
     driver.get_identity.side_effect = DriverTimeoutError(code="LPDS-TMO-001", message="timed out")
-    library = PowerSupplyLibrary(driver)
+    cli = PowerSupplyCli(driver)
 
     with pytest.raises(DriverTimeoutError):
-        library.get_identity()
+        cli.get_identity()
 ```
 
 ### B.4 Mapping table
 
 | Driver-level conformance vector (§7.3) | Adapter-level concern | Adapter test proves |
 |---|---|---|
-| CV-1 (command-only outbound) | Argument forwarding | Keyword passes `channel`/`voltage` to the driver method unchanged |
-| CV-2 (query round trip) | Return forwarding | Keyword returns the driver's `IdentityInfo` (or its RF-displayable form) unchanged |
-| CV-3–CV-8 (state/argument/protocol errors, timeout, recovery) | Exception forwarding | Keyword fails with the driver's `DriverError` rather than a generic RF failure |
-| CV-9 (alias equivalence) | Alias forwarding | Keyword aliases (if any) call the same driver method as their canonical keyword |
-| CV-10 (capability binding) | Discovery forwarding | Keyword documentation/arguments match the capability record the driver exposes |
+| CV-1 (command-only outbound) | Argument forwarding | Command passes `channel`/`voltage` to the driver method unchanged |
+| CV-2 (query round trip) | Return forwarding | Command returns the driver's `IdentityInfo` (or its CLI-displayable form) unchanged |
+| CV-3–CV-8 (state/argument/protocol errors, timeout, recovery) | Exception forwarding | Command fails with the driver's `DriverError` rather than a generic adapter failure |
+| CV-9 (alias equivalence) | Alias forwarding | Command aliases (if any) call the same driver method as their canonical command |
+| CV-10 (capability binding) | Discovery forwarding | Command documentation/arguments match the capability record the driver exposes |
 
-A Robot Framework conformance suite built on this pattern is not re-running LPDS-019 — it is a separate, much smaller suite whose only job is proving the thinness of the translation. The device-protocol proof stays entirely at the driver level, in plain Python, per the rest of this document.
+A CLI conformance suite built on this pattern is not re-running LPDS-019 — it is a separate, much smaller suite whose only job is proving the thinness of the translation. The device-protocol proof stays entirely at the driver level, in plain Python, per the rest of this document.
