@@ -5,7 +5,7 @@
 **Document ID:** LPDS-008  
 **Version:** 1.0  
 **Status:** Draft Project Standard (Normative)  
-**Applies to:** All LPDS Python instrument driver projects, shared platform components, protocol simulators, test suites, hardware-in-the-loop benches, generic GUIs, examples, review workflows, CI pipelines, and release packages
+**Applies to:** All LPDS Python instrument driver projects, shared platform components, protocol simulators, test suites, hardware-in-the-loop testing, examples, and CI pipelines
 
 ---
 
@@ -64,8 +64,7 @@ LPDS-008 covers:
 - simulator-versus-real-hardware declaration;
 - raw-versus-derived evidence classification;
 - protocol trace references required by LPDS-019;
-- HIL evidence required by LPDS-009 and LPDS-018;
-- GUI and manual-operation evidence required by LPDS-012;
+- HIL evidence required by LPDS-009;
 - configuration fingerprints and migration evidence required by LPDS-014;
 - release and review evidence integration;
 - evidence manifests, checksums, completeness status, redaction, retention, and diagnostic-bundle export;
@@ -107,12 +106,10 @@ A conforming implementation shall apply the relevant approved revisions of:
 - **LPDS-009 — Testing Standard**;
 - **LPDS-010 — Driver Review Checklist**;
 - **LPDS-011 — Release Process**;
-- **LPDS-012 — GUI Integration Specification**;
 - **LPDS-013 — Capability Model**;
 - **LPDS-014 — Driver Configuration Model Specification**;
-- **LPDS-015 — Plugin Architecture**;
+- **LPDS-015 — Plugin and Adapter Architecture**;
 - **LPDS-017 — AI Driver Contract Specification**;
-- **LPDS-018 — AI Test Bench Contract Specification**;
 - **LPDS-019 — Driver Call and Protocol Conformance Test Specification**;
 - **LPDS-020 — Driver Implementation Lifecycle**;
 - the device-specific implementation requirements;
@@ -815,8 +812,7 @@ Record when applicable:
 - relay or switching map;
 - reference instruments and serial numbers;
 - calibration status relevant to the result;
-- cable, probe, adapter, or load identifiers when required by the bench procedure;
-- LPDS-018 bench contract version and hash.
+- cable, probe, adapter, or load identifiers when required by the test procedure.
 
 ### 19.5 Sensitive device identity
 
@@ -1130,49 +1126,11 @@ Teardown failure shall be visible in the authoritative test-result record, run s
 
 ---
 
-## 26. Requirement and Traceability Evidence
+## 26. Traceability
 
-### 26.1 Traceability links
+Where it matters (a capability, a test case, and a result), keep the connection between them discoverable — a test named after the method it tests, a `protocol_vector` field pointing back to the vector it exercised — so someone reading a result can find what produced it. A formal requirement-coverage matrix mapping document requirement IDs to implementation, test, and evidence is genuinely useful for a multi-team platform, but isn't expected for a typical driver; skip it unless you have a specific reason to want one.
 
-Evidence shall support links among:
-
-```text
-requirement
-    ↕
-capability / public API method
-    ↕
-implementation component
-    ↕
-test case / protocol vector
-    ↕
-execution result
-    ↕
-raw evidence
-    ↕
-review finding / release decision
-```
-
-### 26.2 Requirement coverage matrix
-
-A generated requirement coverage matrix should contain:
-
-- requirement ID;
-- source document and version;
-- applicability;
-- implementation reference;
-- capability or method reference;
-- test ID;
-- protocol vector where applicable;
-- execution mode;
-- result status;
-- evidence references;
-- review status;
-- deviation or exclusion ID;
-- notes.
-
-### 26.3 No unsupported completion claims
-
-A requirement shall not be marked `PASS` only because code exists or a test case is present. Executed evidence and applicable oracles are required.
+A capability shouldn't be marked passing just because code or a test case exists for it — it should have an actual executed, passing result behind that claim.
 
 ---
 
@@ -1413,63 +1371,15 @@ Evidence-writer failures shall be surfaced immediately when they can invalidate 
 
 ---
 
-## 32. Retention, Compression, and Archiving
+## 32. Retention and Archiving
 
-### 32.1 Retention class
-
-Each run or artifact shall declare a retention class such as:
-
-- `EPHEMERAL_DIAGNOSTIC`;
-- `DEVELOPMENT`;
-- `GATE_REVIEW`;
-- `REGRESSION_BASELINE`;
-- `HIL_QUALIFICATION`;
-- `RELEASE`;
-- `SECURITY_RESTRICTED`.
-
-Actual retention periods are deployment policy, but release and qualification evidence shall not be treated as ephemeral.
-
-### 32.2 Compression
-
-Evidence may be compressed after finalization. Compression shall preserve filenames, relative paths, timestamps where practical, and hashes of uncompressed authoritative files or the complete archive.
-
-### 32.3 Archive naming
-
-Recommended diagnostic or evidence archive naming:
-
-```text
-lpds_evidence_<driver_or_bench>_<UTC timestamp>_<run_id>.zip
-```
-
-### 32.4 Deletion
-
-Deletion of reviewed or release evidence shall require an approved retention action. Tools shall not silently delete previous run directories to make space.
-
-### 32.5 Storage exhaustion
-
-Low-space conditions shall be detected before long runs where practical. If storage exhaustion occurs, the run shall record evidence loss and shall not claim complete evidence.
+Keep release and HIL-qualification evidence around — don't let a "clean up old runs" script silently delete it. Beyond that, retention is a matter of disk space and personal preference; there's no mandated retention-class taxonomy. If you want to archive a run's evidence directory, zip it with a name that includes the driver and timestamp so it's identifiable later.
 
 ---
 
 ## 33. Diagnostic Bundle
 
-Each driver or LPDS application shall provide a repeatable way to export a diagnostic bundle containing applicable:
-
-- run summary;
-- evidence manifest;
-- environment and software inventory;
-- driver, device, simulator, fixture, and bench identity;
-- sanitized effective configuration and fingerprints;
-- operational events;
-- errors and tracebacks;
-- cleanup and final state;
-- authoritative test-result artifacts and any adapter-native reports;
-- relevant protocol traces;
-- measurements and attachments needed for diagnosis;
-- redaction report;
-- known limitations.
-
-The bundle shall exclude secrets and unrelated historical data. The export command and redaction policy shall be documented.
+For a driver with real external users, it's convenient to have one command that gathers the run summary, environment info, recent errors, and sanitized configuration into a single shareable bundle for bug reports — excluding secrets, same as any other evidence. This is a nice-to-have once someone other than you is filing issues, not a baseline requirement.
 
 ---
 
@@ -1674,11 +1584,9 @@ Verify consistency with:
 
 - LPDS-007 error codes;
 - LPDS-009 test status and HIL identity;
-- LPDS-012 GUI operation records;
 - LPDS-014 configuration fingerprints;
 - LPDS-015 plugin evidence;
 - LPDS-017 contract identity;
-- LPDS-018 bench identity;
 - LPDS-019 protocol vector and trace references;
 - LPDS-011 release manifest.
 
@@ -1702,7 +1610,7 @@ Verify consistency with:
 ### Step 3 — Capture configuration and contracts
 
 - validate and fingerprint effective configuration;
-- record LPDS-017, LPDS-018, capability, plugin, and protocol-vector identities as applicable;
+- record LPDS-017, capability, plugin, and protocol-vector identities as applicable;
 - redact secrets.
 
 ### Step 4 — Capture device or simulator identity
@@ -1743,197 +1651,30 @@ Verify consistency with:
 
 ---
 
-## 39. Acceptance Criteria
+## 39. Checklist
 
-An implementation passes LPDS-008 only when:
+**Basics (every driver)**
+- [ ] Each test run has a unique run ID and its own result directory; conformance runs produce a framework-agnostic authoritative result record (JSON and/or JUnit XML).
+- [ ] Timestamps are UTC and timezone-aware.
+- [ ] Real-hardware and simulator results are clearly labeled and never confused with each other.
+- [ ] Requested/setpoint values, read-back values, and measured values stay visually distinct — never silently merged.
+- [ ] Secrets never appear in logs, evidence files, or exported reports.
+- [ ] A cleanup or teardown failure is recorded, not hidden behind an otherwise-successful result.
+- [ ] An error's causal chain (the original exception) survives into the evidence, not just a generic failure message.
 
-1. every formal run has one unique run ID and isolated result root;
-2. required conformance test runs produce the framework-agnostic authoritative test-result record (and any adapter-native reports required by policy);
-3. authoritative and derived evidence are explicitly distinguished;
-4. all applicable events, operations, errors, measurements, protocol exchanges, safety actions, and cleanup records are correlated;
-5. machine-readable evidence uses declared, validated schema versions;
-6. timestamps include timezone and durations use a monotonic source where available;
-7. JSON, JSONL, and canonical CSV comply with this specification;
-8. driver, software, configuration, execution mode, and applicable device/bench identities are recorded;
-9. real-hardware and simulation evidence cannot be confused;
-10. requested, setpoint, read-back, measured, and calculated values remain distinguishable;
-11. units, limits, validity, and pass/fail oracles are explicit where applicable;
-12. required raw evidence is preserved or referenced with integrity information;
-13. cleanup and safe-state evidence remains visible even after earlier failure;
-14. secrets and prohibited sensitive values are absent from distributable evidence;
-15. dropped, truncated, missing, or failed evidence is reported explicitly;
-16. the run summary agrees with the authoritative test-result and structured evidence totals;
-17. the evidence manifest lists required files and validates their SHA-256 hashes;
-18. derived reports reference their authoritative source evidence;
-19. release and gate evidence is tied to the exact candidate revision;
-20. all required evidence validation tests pass.
+**As a driver matures**
+- [ ] JSON/JSONL/CSV exports validate against their declared schema and are UTF-8/locale-independent.
+- [ ] An evidence manifest lists the run's artifacts, with hashes if you need tamper-evidence.
+- [ ] A derived report (e.g. an adapter's HTML report) references its authoritative source rather than standing alone.
+- [ ] Release evidence is tied to the exact revision it was generated from.
+
+As with the rest of this standard, most of this is worth having eventually and none of it is worth blocking a `wip` driver over — see LPDS-001 §32.
+
+Whenever an evidence schema, field meaning, or status value changes in a way that affects other tooling (dashboards, an adapter, the AI contract), update those consumers in the same revision — an undocumented breaking schema change is the main thing worth actually avoiding here.
 
 ---
 
-## 40. Failure Conditions
-
-LPDS-008 shall fail when any applicable condition occurs:
-
-- formal conformance-test evidence omits the framework-agnostic authoritative test-result record (or an adapter-native report required by policy);
-- a PASS result has no traceable authoritative evidence;
-- a derived report contradicts authoritative evidence without declaring the conflict;
-- test, operation, protocol, measurement, error, or cleanup evidence cannot be correlated;
-- real-hardware and simulator results are mixed or mislabeled;
-- requested and measured values are silently conflated;
-- units or limits required to interpret a result are absent;
-- secrets or prohibited private data appear in evidence;
-- evidence files are overwritten across runs;
-- missing or dropped records are not reported;
-- timestamps are ambiguous or lack timezone in machine-readable evidence;
-- non-standard or invalid JSON is produced;
-- CSV output is locale-dependent, structurally ambiguous, or unsafe for normal spreadsheet opening;
-- cleanup failure is hidden;
-- evidence claims physical verification without a physical oracle;
-- evidence belongs to a different package or source revision;
-- manifest hashes do not validate;
-- finalized reviewed evidence is modified without re-manifesting and re-review;
-- mandatory evidence remains incomplete or corrupt;
-- release documentation overstates the available evidence level.
-
----
-
-## 41. Lifecycle Integration
-
-### Gate 1 — Architecture and Skeleton
-
-Deliver:
-
-- evidence architecture and run-context design;
-- schema skeletons;
-- standard identifiers and context propagation;
-- result-directory policy;
-- redaction policy;
-- basic operational logging;
-- evidence unit-test skeleton.
-
-### Gate 2 — Core Implementation
-
-Deliver:
-
-- structured event and operation logging;
-- environment, driver, and configuration identity;
-- authoritative test-result artifact generation;
-- error and cleanup evidence;
-- canonical run summary;
-- initial CSV and JSON exports.
-
-### Gate 3 — Extended Features
-
-Deliver as applicable:
-
-- measurement streams;
-- protocol and LPDS-019 correlation;
-- multi-driver and multi-process correlation;
-- attachments and plots;
-- rotation, compression, crash recovery, and diagnostic bundles;
-- configuration migration evidence;
-- GUI and plugin evidence integration.
-
-### Gate 4 — Tests and Documentation
-
-Deliver:
-
-- schema, correlation, test-result, CSV, redaction, integrity, failure, and performance tests;
-- evidence validation scripts;
-- logging and evidence documentation;
-- troubleshooting and diagnostic-bundle guide;
-- verified examples;
-- generated sample evidence.
-
-### Gate 5 — Review and Release
-
-Verify:
-
-- exact-candidate evidence binding;
-- manifest and hashes;
-- secret scanning;
-- cross-specification consistency;
-- test, conformance, HIL, and review evidence completeness;
-- release evidence archive;
-- history, review, README, GitHub Pages, and release-note status.
-
----
-
-## 42. Change Control
-
-Whenever an evidence schema, field meaning, status, filename, directory, identifier, redaction rule, correlation rule, or authoritative-source decision changes, the same revision shall update:
-
-- schema files and schema versions;
-- evidence writer and validator;
-- documentation and examples;
-- tests;
-- migration or compatibility rules;
-- AI and GUI contracts where affected;
-- history and review records;
-- release notes when public consumers are affected.
-
-A breaking evidence-schema change without a new major schema version and migration or compatibility statement shall fail release review.
-
-A public driver behaviour change that affects arguments, results, errors, state, protocol, measurements, or cleanup shall update the relevant evidence schema or mapping in the same driver revision.
-
----
-
-## 43. Review Checklist
-
-1. Does every run receive a unique run ID and isolated output directory?
-2. Are authoritative and derived artifacts distinguished?
-3. Is the framework-agnostic authoritative test-result record preserved as the authoritative result?
-4. Are any required adapter-native reports generated and linked to the authoritative record?
-5. Do run, suite, test, method, operation, protocol, sample, error, and cleanup references correlate?
-6. Are timestamps UTC and timezone-aware?
-7. Are monotonic durations used where needed?
-8. Are JSON and JSONL schemas declared and validated?
-9. Is canonical CSV UTF-8, locale-independent, stable, and safely escaped?
-10. Are row counts, hashes, and metadata sidecars correct?
-11. Are requested, read-back, measured, and calculated values distinct?
-12. Are units, limits, validity, and status explicit?
-13. Is real hardware clearly separated from simulation or replay?
-14. Are driver, package, source revision, configuration, device, firmware, fixture, and bench identities recorded as applicable?
-15. Are LPDS-017, LPDS-018, capability, configuration, plugin, and LPDS-019 identities or hashes recorded where applicable?
-16. Are raw protocol and measurement observations preserved where required?
-17. Are errors, causal chains, retries, recovery, and cleanup recorded without hiding the original failure?
-18. Is safe-state confidence represented honestly?
-19. Are dropped events, dropped samples, truncation, and write failures visible?
-20. Are secrets absent from every distributable artifact?
-21. Does the diagnostic bundle apply the redaction policy?
-22. Does the evidence manifest enumerate every required artifact?
-23. Do SHA-256 hashes validate?
-24. Do derived reports identify their source evidence and tool version?
-25. Is evidence tied to the exact reviewed release candidate?
-26. Are retention, compression, and archive rules documented?
-27. Do crash-recovery and disk-failure tests behave correctly?
-28. Are logging throughput and memory bounded for the supported workload?
-29. Are LPDS-009, LPDS-012, LPDS-014, LPDS-015, LPDS-019, and release evidence consistent?
-30. Are all acceptance criteria satisfied?
-
----
-
-## 44. Minimum Definition of Done
-
-LPDS-008 implementation is complete for a released driver when:
-
-- a common run context and structured evidence system are implemented;
-- the framework-agnostic authoritative test-result artifact (and any required adapter-native report) is generated for every formal conformance test run;
-- run summaries, environment records, identities, configuration fingerprints, events, errors, cleanup, and integrity records are produced;
-- applicable measurements use the canonical CSV or JSONL model;
-- applicable protocol exchanges link to LPDS-019 vectors and traces;
-- simulation and real-device evidence are unmistakably separated;
-- secrets are redacted and automated scans pass;
-- evidence finalization detects loss, truncation, and corruption;
-- the evidence manifest and SHA-256 hashes validate;
-- required tests pass;
-- documentation and diagnostic-bundle procedures are complete;
-- no mandatory release or qualification evidence is incomplete, corrupt, or tied to another revision;
-- all acceptance criteria in Section 39 pass.
-
----
-
-## 45. Goal
+## 40. Goal
 
 Provide consistent, trustworthy, machine-readable, reviewable, and auditable proof of what every LPDS driver, test, GUI, simulator, bench, and release actually did.
 
@@ -2151,4 +1892,4 @@ Version 1.0 establishes:
 - manifest, SHA-256 integrity, provenance, and completeness requirements;
 - crash recovery, storage, retention, diagnostic-bundle, and performance rules;
 - lifecycle deliverables, acceptance criteria, failure conditions, review checklist, and definition of done;
-- integration with LPDS-009, LPDS-012, LPDS-014, LPDS-015, LPDS-017, LPDS-018, LPDS-019, and LPDS-011.
+- integration with LPDS-009, LPDS-014, LPDS-015, LPDS-017, LPDS-019, and LPDS-011.
