@@ -1,6 +1,6 @@
 # LPDS-020 — Driver Implementation Lifecycle
 
-**Version:** 1.1
+**Version:** 1.2
 **Document ID:** LPDS-020
 **Status:** Project requirement
 **Applies to:** All LPDS Python instrument driver projects
@@ -9,10 +9,7 @@
 
 ## Purpose
 
-This document defines the mandatory implementation lifecycle for all
-Python instrument driver projects. It standardizes development into
-**Phases** and **Gates** so that every delivery is small enough to
-review, test, and package while remaining production quality.
+This document describes a phase-and-gate shape for driver development: breaking work into **Phases**, each divided into **Gates**, so that a delivery stays small enough to build, test, and review in one sitting rather than accumulating into one enormous unreviewable change. It's a useful pacing tool for a solo developer as much as for a team — there's no assumption here that different gates need different people.
 
 ## Normative References
 
@@ -22,226 +19,66 @@ review, test, and package while remaining production quality.
 - LPDS-011 — Release Process
 - LPDS-017 — AI Driver Contract Specification
 
-------------------------------------------------------------------------
+---
 
-# Project Structure
+## Project Structure
 
-A project is divided into sequential **Phases**.
+A project is divided into sequential **Phases**. Each Phase moves through **five Gates**:
 
-Each Phase is divided into **five Gates**.
+```text
+Phase N
+├── Gate 1 – Architecture & Skeleton
+├── Gate 2 – Core Implementation
+├── Gate 3 – Extended Features
+├── Gate 4 – Tests & Documentation
+└── Gate 5 – Review & Release
+```
 
-    Phase N
-    │
-    ├── Gate 1 – Architecture & Skeleton
-    ├── Gate 2 – Core Implementation
-    ├── Gate 3 – Extended Features
-    ├── Gate 4 – Tests & Documentation
-    └── Gate 5 – Review & Release
+A gate should be reasonably complete before starting the next one — the point is avoiding a giant, hard-to-review pile of unrelated changes, not enforcing a formal sign-off chain.
 
-A gate must be completed and approved before the next gate begins.
+---
 
-------------------------------------------------------------------------
+## Gate 1 — Architecture & Skeleton
 
-# Gate 1 -- Architecture & Skeleton
+Build the folder structure, base classes, data models, and a buildable (if incomplete) package. Done when: the package builds, coding standards are followed, and the architecture is documented well enough that Gate 2 can build on it without guessing.
 
-## Objective
+## Gate 2 — Core Implementation
 
-Create or extend the architecture required for the current phase.
+Implement the primary functionality: core logic, public API methods, error handling, and a couple of initial examples. Done when: the main functionality works, the public API follows LPDS-002, and unit tests cover what's implemented.
 
-### Deliverables
+## Gate 3 — Extended Features
 
--   Folder structure
--   Interfaces
--   Base classes
--   Data models
--   Configuration updates
--   Architecture documentation
--   Buildable package
+Fill in the rest of the phase's scope: edge cases, remaining features, configuration, AI contract updates. Done when: the phase's declared scope is feature-complete, the API stayed backward compatible (or a breaking change was deliberate and documented), and docs reflect the new behavior.
 
-### Acceptance Criteria
+## Gate 4 — Tests & Documentation
 
--   Package builds successfully
--   Coding standards followed
--   Architecture documented
--   No Critical review findings
+Round out tests, examples, and documentation: integration tests, usage examples (plain Python, plus adapter examples if any adapter exists), API docs, and an updated README. Done when: tests pass and examples actually run — against real hardware where you have it, against the simulator otherwise.
 
-------------------------------------------------------------------------
+## Gate 5 — Review & Release
 
-# Gate 2 -- Core Implementation
+Run the LPDS-010 checklist against the phase's output, fix what it turns up, update the changelog, and package the release. Done when: nothing safety- or correctness-critical remains open (LPDS-010), and the phase's changes are reflected in history/changelog, examples, tests, and the AI Driver Contract if one is published.
 
-## Objective
+---
 
-Implement the primary functionality.
+## Versioning
 
-### Deliverables
+Internally, it can help to tag each gate's output with a pre-release identifier distinguishing it from the public release:
 
--   Core Python implementation
--   Public API methods
--   Public API
--   Error handling
--   Initial examples
+```text
+Phase 1: v26.01.01 (Gate 1) ... v26.01.05 (Gate 5)
+Phase 2: v26.02.01 ... v26.02.05
+```
 
-### Acceptance Criteria
+This `vYY.PP.GG` form (year, phase, gate) is purely an internal convenience for tracking your own progress — most solo projects won't bother publishing anything until a phase's Gate 5 is done, at which point the release uses LPDS-011 §5.2's public `vYY.RR` format (e.g. `v26.01`), not the internal gate form.
 
--   Main functionality operational
--   Public API verified against LPDS-002
--   Unit tests for implemented features
+---
 
-------------------------------------------------------------------------
+## Note on Adapters
 
-# Gate 3 -- Extended Features
+The gates above are about the driver itself. If a phase also delivers one or more adapters (pytest, CLI, REST, etc.), adapter work follows its own, much lighter pass: an adapter has no device logic to gate through five stages — it just needs an implementation-and-translation-verification check against the driver's already-approved public API.
 
-## Objective
+---
 
-Complete all remaining functionality defined for the phase.
+## Why Bother
 
-### Deliverables
-
--   Advanced features
--   Edge-case handling
--   Performance improvements
--   Configuration enhancements
--   AI metadata updates
-
-### Acceptance Criteria
-
--   Feature complete for the phase
--   API remains backward compatible
--   Documentation updated
-
-------------------------------------------------------------------------
-
-# Gate 4 -- Tests & Documentation
-
-## Objective
-
-Validate and document the implementation.
-
-### Deliverables
-
--   Unit tests
--   Integration tests
--   Usage examples (plain Python, plus optionally adapter examples if
-    adapters exist for the driver)
--   API documentation
--   User guide
--   Developer guide
--   Updated README
-
-### Acceptance Criteria
-
--   Target code coverage achieved
--   All tests passing
--   Examples verified on supported hardware where applicable
-
-------------------------------------------------------------------------
-
-# Gate 5 -- Review & Release
-
-## Objective
-
-Finalize the phase for release.
-
-### Deliverables
-
--   Code review
--   Architecture review
--   Public API review
--   Documentation review
--   Performance review
--   Bug fixes
--   Changelog
--   Release notes
--   ZIP package
-
-### Acceptance Criteria
-
--   No Critical issues
--   Major issues resolved or documented
--   Phase approved for continuation
-
-------------------------------------------------------------------------
-
-# Phase Completion
-
-A phase is complete only when all five gates have been approved.
-
-Each phase must produce:
-
--   Updated documentation
--   Updated AI Driver Contract
--   Updated examples
--   Updated tests
--   Updated history/
--   Updated review/
--   Production-ready ZIP package
-
-------------------------------------------------------------------------
-
-# Versioning
-
-Each gate produces a versioned release.
-
-    Phase 1
-    v26.01.01 Gate 1
-    v26.01.02 Gate 2
-    v26.01.03 Gate 3
-    v26.01.04 Gate 4
-    v26.01.05 Gate 5
-
-    Phase 2
-    v26.02.01
-    v26.02.02
-    v26.02.03
-    v26.02.04
-    v26.02.05
-
-This `vYY.PP.GG` form (year, phase, gate) is an internal pre-release
-identifier used to track gate-level progress within a phase. It is
-distinct from the public release version. Once a phase's Gate 5 is
-approved and the package is externally released, the package shall be
-versioned per LPDS-011 §5.2's zero-padded `vYY.RR` public release
-format (for example, `v26.01`), not the internal `vYY.PP.GG` form.
-
-------------------------------------------------------------------------
-
-# Mandatory Reviews
-
-Every Gate shall include:
-
-1.  Functional review
-2.  Architecture review
-3.  Public API review
-4.  Documentation review
-5.  Code quality review
-
-Every Phase shall additionally include:
-
--   Regression review
--   Performance review
--   Release readiness review
-
-------------------------------------------------------------------------
-
-# Benefits
-
-This methodology provides:
-
--   Small, reviewable implementation increments
--   Continuous testing
--   Continuous documentation
--   Predictable releases
--   Easier AI-assisted implementation
--   Reduced integration risk
--   Consistent lifecycle across all Python instrument driver projects
-
-------------------------------------------------------------------------
-
-# Note on Adapters
-
-The gates above apply to the driver itself. If the phase also delivers
-one or more adapters (pytest, CLI, REST, etc.) for
-the driver, adapter work follows its own lighter-weight lifecycle: an
-adapter contains no device logic to gate, so it only requires a thin
-implementation-and-translation-verification pass against the driver's
-already-approved public API, rather than the full five-gate sequence.
+Breaking work into phases and gates keeps each delivery small enough to actually review, keeps tests and docs from falling behind the code, and makes it easier to pick the work back up (or hand it to an AI coding assistant) without having to reconstruct a huge pile of context first. It's a pacing tool, not a compliance process — use as much or as little formality around it as your project's actual size calls for.
