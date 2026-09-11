@@ -61,7 +61,6 @@ LPDS-011 does not define:
 - vendor protocol behaviour;
 - test implementation details owned by LPDS-009 or LPDS-019;
 - detailed code-review criteria owned by LPDS-010;
-- bench wiring and resource assignment owned by LPDS-018;
 - external package-index, organisation, or signing infrastructure that the project does not control.
 
 ---
@@ -79,7 +78,6 @@ A conforming release shall follow the applicable approved revisions of:
 - **LPDS-009 — Testing Standard**;
 - **LPDS-010 — Review Checklist**;
 - **LPDS-017 — AI Driver Contract Specification**;
-- **LPDS-018 — AI Test Bench Contract Specification**, where applicable;
 - **LPDS-019 — Driver Call and Protocol Conformance Test Specification**;
 - **LPDS-020 — Driver Implementation Lifecycle**;
 - the approved device-specific implementation requirements;
@@ -383,7 +381,7 @@ Manual search-and-replace across the repository should not be the primary versio
 
 ### 7.4 Release sequence allocation
 
-The release authority shall allocate `YY.RR` before the first release-candidate build.
+The maintainer allocates `YY.RR` before the first release-candidate build.
 
 The allocation shall be recorded in at least one of:
 
@@ -668,40 +666,9 @@ The release-readiness review shall verify this mapping.
 
 ---
 
-## 12. Release freeze
+## 12. Getting Ready to Release
 
-### 12.1 Freeze entry
-
-A release candidate enters freeze when:
-
-- scope is declared complete;
-- the intended public version is allocated;
-- public API changes are stopped;
-- history and documentation are substantially complete;
-- mandatory software tests pass on the release branch or tag candidate.
-
-### 12.2 Permitted freeze changes
-
-After freeze, only the following changes are permitted without reopening scope:
-
-- corrections to release-blocking defects;
-- test corrections required to prove intended behaviour;
-- documentation corrections matching already approved behaviour;
-- generated artifact updates;
-- version and release metadata synchronization.
-
-### 12.3 Freeze invalidation
-
-Freeze shall be invalidated when a change:
-
-- adds a new public capability;
-- changes public API or documented behaviour;
-- changes safety semantics;
-- changes supported-device scope;
-- materially changes dependencies or packaging;
-- invalidates existing review or evidence.
-
-After invalidation, affected gates and reviews shall be rerun.
+Once you're preparing a release, it's worth mentally "freezing" scope: stop adding public API changes, and limit yourself to fixing release-blocking defects, correcting docs to match already-implemented behavior, and syncing version metadata. If something comes up that genuinely needs a new capability or a behavior change, that's fine — just recognize it reopens the scope, and re-run whatever tests or review that change touches before releasing.
 
 ---
 
@@ -740,7 +707,6 @@ Before building a final candidate, the project shall confirm:
 - LPDS-017 contract is complete and current;
 - LPDS-017 lock validates;
 - capability metadata matches code and documentation;
-- LPDS-018 template is current when applicable;
 - public API manifest is regenerated;
 - protocol vectors are current for device-facing public API methods.
 
@@ -765,133 +731,21 @@ Before building a final candidate, the project shall confirm:
 
 ---
 
-## 14. Mandatory release quality gates
+## 14. Before You Publish
 
-A public release shall pass all applicable gates below.
+A rough sequence that catches most problems, roughly in order:
 
-### Gate R1 — Structure and identity
+1. **Structure and identity** — correct archive filename, one stable internal root, no forbidden/leftover files.
+2. **Static quality** — formatting, linting, type checking pass; no secrets in the diff.
+3. **Software tests** — unit, simulator-based, and compatibility tests pass.
+4. **LPDS-019 conformance** — passes against the simulator at minimum; label simulator-only results as simulator evidence, not physical-hardware proof.
+5. **Hardware validation, if you have the hardware** — record device/firmware/transport identity, verify safe cleanup, don't silently fall back to the simulator if a real connection was expected.
+6. **Docs and examples** — README and examples match the code being released; examples actually run.
+7. **Build and clean-install** — build the wheel/sdist, install into a clean environment, confirm import and a basic workflow work.
 
-Verify:
+A release manifest (§18) is worth generating every time; an SBOM, detached checksums, and build provenance are worth adding once you have consumers who need that level of supply-chain assurance — not a default requirement.
 
-- canonical project structure;
-- required files and directories;
-- correct version mapping;
-- correct archive filename;
-- exactly one stable internal root;
-- absence of forbidden files and nested release archives.
-
-### Gate R2 — Static quality
-
-Run, as applicable:
-
-- Python compilation;
-- formatting check;
-- linting;
-- type checking;
-- metadata validation;
-- secret scanning;
-- dependency and licence policy checks;
-- documentation-link validation.
-
-### Gate R3 — Software tests
-
-Run:
-
-- unit tests;
-- simulated acceptance tests (pytest-based, against a simulated/mock transport);
-- integration tests;
-- compatibility tests;
-- protocol replay/failure tests;
-- regression tests;
-- required coverage checks.
-
-### Gate R4 — Driver call and protocol conformance
-
-Execute LPDS-019 or record an approved scope exception.
-
-The release shall preserve:
-
-- public API method inventory;
-- protocol vectors;
-- outbound and inbound evidence;
-- parsed-return validation;
-- timeout, malformed-response, error, and recovery results;
-- conformance summary and coverage matrix.
-
-A simulator-only result shall be labelled as simulator evidence and shall not be represented as physical accuracy or HIL proof.
-
-### Gate R5 — Hardware validation
-
-Where real-device validation is required:
-
-- execute the approved HIL profile;
-- record device identity, firmware, transport, fixture, safety limits, and operator actions;
-- preserve conformance-test and supplementary evidence;
-- verify safe cleanup;
-- record untested models, options, firmware, or transport combinations.
-
-HIL shall not silently fall back to simulation.
-
-### Gate R6 — Documentation and examples
-
-Verify:
-
-- strict documentation build;
-- generated API reference documentation build;
-- current API reference;
-- README consistency;
-- GitHub Pages navigation;
-- compatibility and migration content;
-- exact execution of numbered examples through packaged runners.
-
-### Gate R7 — Build and clean installation
-
-Build:
-
-- wheel;
-- source distribution;
-- public project ZIP;
-- documentation site artifact where used.
-
-Then test clean installation from:
-
-- wheel;
-- source distribution;
-- extracted public ZIP using documented setup commands.
-
-Smoke tests shall confirm:
-
-- import;
-- driver discovery via packaging entry points;
-- API reference documentation generation;
-- simulator or replay connection;
-- one basic plain-Python workflow (and, where an adapter is bundled, one basic adapter smoke test);
-- deterministic cleanup.
-
-### Gate R8 — Integrity and supply-chain evidence
-
-Generate and validate:
-
-- release manifest;
-- SPDX or CycloneDX SBOM;
-- internal payload checksum list;
-- detached public artifact checksums;
-- build-environment record;
-- provenance or attestation where supported.
-
-### Gate R9 — Final review and approval
-
-The release authority shall review:
-
-- release-readiness verdict;
-- test and conformance results;
-- HIL status;
-- open risks;
-- API diff and migration impact;
-- final artifact identities and checksums;
-- publication plan.
-
-Approval shall refer to the final candidate bytes or their verified hashes.
+There's no separate "release authority" approval step assumed here — for a solo or small-team driver, working through the list above *is* the approval.
 
 ---
 
@@ -1176,33 +1030,9 @@ The release build shall verify that:
 
 ---
 
-## 19. Software bill of materials
+## 19. Software Bill of Materials (optional)
 
-### 19.1 Mandatory SBOM
-
-Every public release shall generate an SPDX or CycloneDX SBOM in the approved project filename, for example:
-
-```text
-release/sbom.spdx.json
-```
-
-### 19.2 SBOM scope
-
-The SBOM shall identify, as applicable:
-
-- the LPDS driver package (and any bundled adapters);
-- direct Python dependencies;
-- resolved transitive dependencies used for distributed runtime artifacts;
-- bundled upstream source or binary components;
-- licences where discoverable;
-- package versions and identifiers;
-- hashes where supported by the SBOM tool.
-
-### 19.3 SBOM accuracy
-
-An SBOM generated from an unrelated development environment is insufficient.
-
-The SBOM shall correspond to the released artifact or its locked build environment and shall be regenerated when release dependencies change.
+An SBOM (SPDX or CycloneDX, e.g. `release/sbom.spdx.json`) listing dependencies, versions, and licenses is genuinely useful once a release has consumers who need supply-chain guarantees. It's not expected by default — add it when someone actually needs it, and regenerate it from the release environment rather than an unrelated dev machine so it stays accurate.
 
 ---
 
@@ -1306,55 +1136,9 @@ Optional vendor runtimes may be required only when the selected transport explic
 
 ---
 
-## 23. Review and approval
+## 23. Review
 
-### 23.1 Required review records
-
-Every public release shall have current records equivalent to:
-
-```text
-review/vYY.RR_code_review.md
-review/vYY.RR_architecture_review.md
-review/vYY.RR_api_review.md
-review/vYY.RR_documentation_review.md
-review/vYY.RR_security_review.md
-review/vYY.RR_compatibility_review.md
-review/vYY.RR_release_readiness.md
-review/requirement_traceability.md
-review/known_risks.md
-```
-
-### 23.2 Release-readiness verdicts
-
-Permitted final verdicts are:
-
-- **APPROVED** — all mandatory requirements pass;
-- **APPROVED WITH ACCEPTED RISK** — no Critical issue; explicit non-critical risk is accepted by authorised owner;
-- **REJECTED** — one or more release-blocking conditions exist.
-
-A public production release should normally require **APPROVED**.
-
-### 23.3 Finding severity
-
-At minimum:
-
-- **Critical** — release blocked; unsafe, security-critical, corrupting, non-installable, materially non-conformant, or falsely passing behaviour;
-- **Major** — release blocked unless explicitly accepted by authorised release owner and permitted by project policy;
-- **Minor** — correction recommended; may be deferred with tracking;
-- **Observation** — improvement or informational note.
-
-### 23.4 Approval binds to artifacts
-
-Approval shall identify:
-
-- release version;
-- source revision;
-- final candidate artifact hashes;
-- review verdict;
-- approver or approved automation identity;
-- approval date.
-
-A source-only approval that does not identify the built candidate is insufficient for final publication.
+Run the LPDS-010 checklist against the actual release candidate — the built artifact, not just the source — before publishing. Anything that could cause unsafe behavior, data corruption, or a silently wrong result should be fixed first; everything else can be noted and tracked. See LPDS-010 for the full checklist; there's no separate release-specific review bureaucracy layered on top of it here.
 
 ---
 
@@ -1510,44 +1294,11 @@ A hotfix ZIP shall not overwrite the original release ZIP.
 
 ---
 
-## 29. Rollback, yanking, and supersession
+## 29. Fixing a Bad Release
 
-### 29.1 Rollback
+If a published release turns out to have a serious defect, don't delete it — deleting a release out from under anyone who already installed it is worse than leaving it up. Instead, mark it clearly on the GitHub release page (or PyPI, if published there) as having a known issue, say what the issue is, and point at the fixed release. GitHub's "pre-release" / release-notes editing covers this well enough for most projects; there's no separate formal rollback record needed.
 
-Rollback means restoring deployment or recommendation to a previously approved release. It does not modify that earlier release.
-
-The rollback record shall identify:
-
-- release being withdrawn from normal use;
-- release restored or recommended;
-- reason;
-- affected users and configurations;
-- safety or data-integrity implications;
-- migration or downgrade instructions.
-
-### 29.2 Yank
-
-A release should be yanked when it has a serious defect but must remain available for audit or dependency resolution.
-
-The release page shall clearly state:
-
-- yanked status;
-- reason;
-- affected scope;
-- recommended replacement;
-- whether use is unsafe or merely unsupported.
-
-### 29.3 Supersession
-
-Every new release should identify the previously recommended release it supersedes.
-
-Supersession shall not imply that the old release is defective. Support status shall follow `docs/support_policy.md`.
-
-### 29.4 Deleted releases
-
-Published releases should not be deleted except where legally required, secrets were exposed, or distribution itself creates unacceptable risk.
-
-Deletion shall be documented in the project audit record.
+Deleting a release outright should be rare — a genuinely exposed secret or a legal requirement, not "we don't like this version anymore."
 
 ---
 
@@ -1567,154 +1318,42 @@ Evidence retention shall follow project policy, but final release manifests, che
 
 ---
 
-## 31. Release security
+## 31. Basic Release Hygiene
 
-The release process shall:
+A few things worth doing regardless of project size: don't commit release credentials or expose them in CI logs; scan release content for secrets before publishing; keep tags/release branches reasonably protected if your Git host supports it. Generating an SBOM, running formal provenance/attestation, and requiring a separate approval step for publication are things to add once a release process has real stakeholders depending on that level of assurance.
 
-- use least-privilege workflow permissions;
-- protect release credentials;
-- avoid exposing secrets in logs or evidence;
-- pin third-party workflow actions according to project policy;
-- scan release content for credentials and private data;
-- generate an SBOM;
-- run approved dependency and vulnerability checks;
-- protect tags and release branches;
-- generate provenance or attestation when supported;
-- require explicit approval for publication to protected channels.
-
-A discovered secret in a published artifact is a Critical incident and shall trigger credential revocation, artifact removal or yanking, incident review, and a new release.
+A secret that does slip into a published artifact is worth treating seriously regardless of scale: revoke the credential, yank or fix the release (§29), and note what happened in the CHANGELOG.
 
 ---
 
-## 32. Release failure conditions
+## 32. Checklist
 
-A public release shall fail when any applicable condition exists:
+**Identity**
+- [ ] Archive is named `<driver_name>_vYY.RR.zip`, with exactly one internal root `<driver_name>/`.
+- [ ] Version is consistent across the package, README, and AI contract (if published).
 
-- version identity is missing, duplicated, stale, or contradictory;
-- archive name does not match `<driver_name>_vYY.RR.zip`;
-- ZIP has more than one root or the wrong root name;
-- published bytes differ from approved candidate bytes;
-- a published version would be overwritten;
-- mandatory folder or artifact is missing;
-- history does not account for delivered changes;
-- required review is missing or stale;
-- Critical finding remains open;
-- unaccepted Major finding remains open;
-- public API changes are unclassified;
-- breaking change lacks migration and approval;
-- LPDS-017 contract or lock is stale;
-- LPDS-019 conformance is required but absent, failed, or falsely represented;
-- mandatory tests fail;
-- required coverage threshold fails;
-- HIL status is overstated or simulation is represented as hardware proof;
-- clean installation fails;
-- API reference documentation generation or strict documentation build fails;
-- examples are missing, placeholders, unsafe, or not runnable through scripts;
-- forbidden files, credentials, private bench data, or nested release archives are present;
-- SBOM, manifest, or checksums are missing or invalid;
-- final artifacts cannot be traced to the approved source revision;
-- GitHub Pages contradicts the release;
-- release notes omit material safety, compatibility, or known-risk information.
+**Changes**
+- [ ] `CHANGELOG.md` (or `history/`) is current and describes what changed.
+- [ ] A breaking change (LPDS-011 §10) has migration guidance and a version bump.
+
+**Code and tests**
+- [ ] The package imports without hardware access or an automation framework.
+- [ ] Tests pass; LPDS-019 conformance passes at least against the simulator.
+- [ ] If published, the LPDS-017 contract and lock validate against the current API.
+
+**Docs and build**
+- [ ] README and examples match the release; examples actually run.
+- [ ] Wheel/sdist build and install cleanly in a fresh environment.
+
+**Publication**
+- [ ] The Git tag points at the released commit; the GitHub release includes the built artifacts and notes.
+- [ ] A quick post-publish sanity check (download, install, import) passes.
+
+As throughout this standard: an unchecked box is something to note honestly (in the README, via the driver's status label — LPDS-001 §9), not something that requires a formal waiver to proceed past.
 
 ---
 
-## 33. Minimum public release acceptance checklist
-
-### Identity
-
-- [ ] Stable driver identifier is valid.
-- [ ] Public version is the allocated `vYY.RR`.
-- [ ] Python version maps deterministically to the LPDS version.
-- [ ] All authoritative version locations agree.
-- [ ] Archive is named exactly `<driver_name>_vYY.RR.zip`.
-- [ ] ZIP contains exactly one root: `<driver_name>/`.
-
-### Changes and compatibility
-
-- [ ] Every change is recorded and classified.
-- [ ] `CHANGELOG.md` is current.
-- [ ] `history/vYY.RR.md` is complete.
-- [ ] `docs/release_notes.md` is current.
-- [ ] API diff is generated.
-- [ ] Breaking changes are approved and have migration instructions.
-- [ ] Deprecations identify replacement and removal policy.
-
-### Code, contracts, and tests
-
-- [ ] Package imports without hardware access.
-- [ ] Static quality gates pass.
-- [ ] Unit tests pass.
-- [ ] Simulated acceptance tests pass.
-- [ ] Integration, compatibility, replay, regression, and performance tests pass where applicable.
-- [ ] Coverage threshold passes.
-- [ ] LPDS-017 contract and lock validate.
-- [ ] Capability metadata matches the public API.
-- [ ] LPDS-019 passes or has an approved explicit exclusion.
-- [ ] Required HIL passes and its scope is accurately stated.
-
-### Documentation and examples
-
-- [ ] README matches the exact release.
-- [ ] At least ten complete numbered examples exist or an approved exception is documented.
-- [ ] Every example can be run through packaged Windows/Linux scripts.
-- [ ] Setup, IDE, adapter (e.g. pytest, CLI), hardware, and troubleshooting guides are current.
-- [ ] API reference documentation is current.
-- [ ] Strict GitHub Pages build passes.
-- [ ] Compatibility, migration, safety, support, and hardware-validation pages are current.
-
-### Review and risk
-
-- [ ] Required reviews are current.
-- [ ] No Critical finding remains open.
-- [ ] No unaccepted Major finding remains open.
-- [ ] Requirement traceability is current.
-- [ ] Known risks and HIL gaps are explicit.
-- [ ] Release-readiness verdict is approved.
-
-### Artifacts and integrity
-
-- [ ] Wheel and source distribution build.
-- [ ] Clean-install tests pass from wheel and source distribution.
-- [ ] Final ZIP extracts and validates from a clean directory.
-- [ ] Release manifest validates.
-- [ ] SBOM corresponds to the release.
-- [ ] Internal payload checksums validate.
-- [ ] Detached public artifact checksums validate.
-- [ ] Provenance/attestation is generated where supported.
-- [ ] Final hashes are bound to approval.
-
-### Publication
-
-- [ ] Protected source tag points to approved source.
-- [ ] GitHub release contains final artifacts and notes.
-- [ ] GitHub Pages shows the correct version and API.
-- [ ] Publicly downloaded artifacts pass checksum verification.
-- [ ] Public clean-install smoke test passes.
-- [ ] Post-release verification is recorded.
-
----
-
-## 34. Minimum definition of done
-
-LPDS-011 is satisfied for a public driver release when:
-
-1. the release has one approved immutable `vYY.RR` identity;
-2. the public ZIP uses the required name and contains one stable internal root;
-3. version information is synchronized across package, contracts, documentation, reviews, manifests, and artifacts;
-4. every delivered change is recorded, classified, reviewed, and traceable;
-5. compatibility and breaking-change rules are satisfied;
-6. all applicable release quality gates pass;
-7. LPDS-019 status and HIL status are accurate and evidence-backed;
-8. wheel, source distribution, and ZIP pass clean-install validation;
-9. README, guides, examples, API reference documentation, and GitHub Pages match the release;
-10. release manifest, SBOM, checksums, and provenance evidence are complete;
-11. no release-blocking finding or forbidden content remains;
-12. final approval identifies the source revision and artifact hashes;
-13. published artifacts and documentation are verified after publication.
-
----
-
-## 35. Goal
+## 33. Goal
 
 Provide a controlled, repeatable, and auditable path from reviewed LPDS driver source to an immutable public release whose identity, contents, compatibility, evidence, documentation, and integrity can be trusted.
 
@@ -1812,48 +1451,7 @@ Hotfix release:    example_v26.04.zip
 
 ---
 
-## Appendix C — Minimum release-readiness record
-
-```markdown
-# Release Readiness — vYY.RR
-
-## Candidate identity
-- Source revision:
-- Tag candidate:
-- ZIP SHA-256:
-- Wheel SHA-256:
-- Source distribution SHA-256:
-
-## Gate results
-- Structure and identity:
-- Static quality:
-- Software tests:
-- LPDS-019:
-- HIL:
-- Documentation and examples:
-- Clean installation:
-- Integrity and SBOM:
-
-## Findings
-- Critical open:
-- Major open:
-- Accepted risks:
-
-## Compatibility verdict
-
-## Publication plan
-
-## Final verdict
-APPROVED / APPROVED WITH ACCEPTED RISK / REJECTED
-
-## Approval
-- Approver:
-- Date:
-```
-
----
-
-## Appendix D — Changes in version 1.0
+## Appendix C — Changes in version 1.0
 
 Initial LPDS-011 release defining:
 
@@ -1868,3 +1466,7 @@ Initial LPDS-011 release defining:
 - release manifest, SBOM, internal and detached checksums;
 - GitHub release and GitHub Pages publication;
 - hotfix, rollback, yanking, supersession, retention, and post-release verification.
+
+### Deep trim to solo/small-team scale
+
+Removed formal release-freeze governance, the 9-gate approval apparatus, mandatory SBOM/attestation, the 7-document review-record requirement, and the formal release-readiness verdict/approval taxonomy — downgraded to a single practical checklist (§32) plus a short "getting ready to publish" section (§12, §14). `vYY.RR` versioning, CHANGELOG discipline, and basic release hygiene are retained as the parts of this process genuinely worth following at any scale.
