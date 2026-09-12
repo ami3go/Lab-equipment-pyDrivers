@@ -369,7 +369,7 @@ Verify that:
 12. safety rules align with implementation and documentation;
 13. requirement traceability links requirements to code, tests, documentation, contracts, protocol evidence, and hardware evidence, where a project chooses to track this;
 14. no requirement is marked complete without implementation and test evidence;
-17. deferred and not-applicable requirements have reasons and owners where appropriate.
+15. deferred and not-applicable requirements have reasons and owners where appropriate.
 
 **Blocking examples:** stale AI contract describes nonexistent method, wrong safety semantics, invalid lock, missing protocol vector mapping, traceability claims hardware-tested without hardware evidence.
 
