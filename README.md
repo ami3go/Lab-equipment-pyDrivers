@@ -19,6 +19,7 @@ all driver repositories.
 |---|---|---|
 | Keysight U1242C | [Keysight_U1242C](https://github.com/ami3go/Keysight_U1242C) | wip |
 | HP/Agilent/Keysight 34401A | [hp34401a-driver](https://github.com/ami3go/hp34401a-driver) | wip |
+| Keysight/Agilent N6700 modular power system | [keysight-n6700-driver](https://github.com/ami3go/keysight-n6700-driver) | untested |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
