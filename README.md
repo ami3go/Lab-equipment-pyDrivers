@@ -23,6 +23,8 @@ all driver repositories.
 | Vötschtechnik (Weiss Technik) climate chamber | [VotschTechnik-climate-chamber-Python](https://github.com/ami3go/VotschTechnik-climate-chamber-Python) | stable |
 | NGI N83624 multi-channel battery/cell simulator | [NGI-N83624-Battery-simulator](https://github.com/ami3go/NGI-N83624-Battery-simulator) | stable |
 | Tektronix DPO4000-family oscilloscopes | [Tektronix_DPO4000_utils](https://github.com/ami3go/Tektronix_DPO4000_utils) | stable |
+| TI TMP116/TMP117/TMP119 temperature sensors (CircuitPython) | [Adafruit_CircuitPython_TMP11X](https://github.com/ami3go/Adafruit_CircuitPython_TMP11X) | stable |
+| DeVaSys USB-I2C/IO adapter | [USB-I2CIO-python](https://github.com/ami3go/USB-I2CIO-python) | stable |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
