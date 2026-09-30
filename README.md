@@ -20,6 +20,9 @@ all driver repositories.
 | Keysight U1242C | [Keysight_U1242C](https://github.com/ami3go/Keysight_U1242C) | wip |
 | HP/Agilent/Keysight 34401A | [hp34401a-driver](https://github.com/ami3go/hp34401a-driver) | wip |
 | Keysight/Agilent N6700 modular power system | [keysight-n6700-driver](https://github.com/ami3go/keysight-n6700-driver) | untested |
+| Vötschtechnik (Weiss Technik) climate chamber | [VotschTechnik-climate-chamber-Python](https://github.com/ami3go/VotschTechnik-climate-chamber-Python) | stable |
+| NGI N83624 multi-channel battery/cell simulator | [NGI-N83624-Battery-simulator](https://github.com/ami3go/NGI-N83624-Battery-simulator) | stable |
+| Tektronix DPO4000-family oscilloscopes | [Tektronix_DPO4000_utils](https://github.com/ami3go/Tektronix_DPO4000_utils) | stable |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
