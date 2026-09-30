@@ -31,6 +31,7 @@ all driver repositories.
 | Purpose | Repository | Status |
 |---|---|---|
 | SCPI interface core (base classes for SCPI-speaking instrument drivers) | [scpi-driver-core](https://github.com/ami3go/scpi-driver-core) (private) | wip |
+| PicoSDK Python bindings (official Pico Technology SDK for PicoScope/PicoLog devices, used for test equipment) | [picosdk-python-wrappers](https://github.com/picotech/picosdk-python-wrappers) | external |
 
 ## Driver & AI Guide Standards
 
