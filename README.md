@@ -25,7 +25,9 @@ all driver repositories.
 | Tektronix DPO4000-family oscilloscopes | [Tektronix_DPO4000_utils](https://github.com/ami3go/Tektronix_DPO4000_utils) | stable |
 | TI TMP116/TMP117/TMP119 temperature sensors (CircuitPython) | [Adafruit_CircuitPython_TMP11X](https://github.com/ami3go/Adafruit_CircuitPython_TMP11X) | stable |
 | DeVaSys USB-I2C/IO adapter | [USB-I2CIO-python](https://github.com/ami3go/USB-I2CIO-python) | stable |
+| EA Elektro-Automatik PS 9000 T programmable DC power supply | [EA-PS-9000T](https://github.com/ami3go/EA-PS-9000T) | wip |
 | Agilent/Keysight 34970A/34972A data acquisition/switch unit (RS232 + USB-GPIB) | [LOG34970A-RS232-Python](https://github.com/ami3go/LOG34970A-RS232-Python) | wip |
+| Agilent/Keysight 33220A function/arbitrary waveform generator (VISA) | [GEN33220A-USB-Python](https://github.com/ami3go/GEN33220A-USB-Python) | wip |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
 
