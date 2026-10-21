@@ -28,8 +28,23 @@ all driver repositories.
 | EA Elektro-Automatik PS 9000 T programmable DC power supply | [EA-PS-9000T](https://github.com/ami3go/EA-PS-9000T) | wip |
 | Agilent/Keysight 34970A/34972A data acquisition/switch unit (RS232 + USB-GPIB) | [LOG34970A-RS232-Python](https://github.com/ami3go/LOG34970A-RS232-Python) | wip |
 | Agilent/Keysight 33220A function/arbitrary waveform generator (VISA) | [GEN33220A-USB-Python](https://github.com/ami3go/GEN33220A-USB-Python) | wip |
+| FNIRSI DC6006L programmable DC power supply (front USB) | [dc6006l-USB-Python](https://github.com/ami3go/dc6006l-USB-Python) | wip |
+| Agilent/Keysight 34411A high-resolution multimeter (VISA) | [DMM34411A-USB-Python](https://github.com/ami3go/DMM34411A-USB-Python) | wip |
+| Agilent/Keysight N6700B 4-channel modular power supply (VISA) | [PS_N6700B-USB-Python](https://github.com/ami3go/PS_N6700B-USB-Python) | wip |
+| ELEKTRO-AUTOMATIK EA-PS series DC power supply (serial) | [ES-PS-controll](https://github.com/ami3go/ES-PS-controll) | wip |
+| ITECH IT-M3900D high-power DC power supply (SCPI) | [itech_driver](https://github.com/ami3go/itech_driver) | wip |
+| Panasonic VP-8122A FM/AM signal generator (GPIB) | [Panasonic_vp-8122a](https://github.com/ami3go/Panasonic_vp-8122a) | wip |
+| Rohde & Schwarz UPV audio analyzer (VISA) | [Rohde-Schwarz_UPV-K7](https://github.com/ami3go/Rohde-Schwarz_UPV-K7) | wip |
+| Phidgets 8-channel USB relay boards | [phidgets_relay](https://github.com/ami3go/phidgets_relay) | wip |
+| E-Resistor programmable resistor matrix (SCPI over TCP) | [E-resistor-matrix-python-driver](https://github.com/ami3go/E-resistor-matrix-python-driver) | wip |
+| E-Resistor 8-bit relay-based resistor switch board | [E-resistor-relay-8bits](https://github.com/ami3go/E-resistor-relay-8bits) | wip |
+| EM TEST AutoWave signal generator (GPIB/VISA) | [AutoWave](https://github.com/ami3go/AutoWave) | wip |
 
 > Adding a new driver? Open a PR here to add it to this table once its repo exists.
+>
+> Status labels follow [LPDS-001 §9](AI_Guides/LPDS-001_Platform_Requirements.md):
+> `wip` (in development), `untested` (feature-complete, simulator-verified, not yet
+> verified on real hardware), `stable` (verified end-to-end on real hardware).
 
 ## Shared libraries
 
