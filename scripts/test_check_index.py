@@ -128,5 +128,104 @@ class GuidesIndexTests(unittest.TestCase):
             self.assertEqual(match.group(1), doc_id)
 
 
+class RemoteCheckTests(unittest.TestCase):
+    """A GitHub API hiccup must not be reported as a broken index entry."""
+
+    def setUp(self) -> None:
+        checker.problems.clear()
+        checker.warnings.clear()
+
+    def _with_fake_fetch(self, fake_fetch, slug="ami3go/example", status="wip"):
+        """Run check_remote against a stubbed fetch, restoring globals after."""
+        original_fetch = checker.fetch_repo
+        original_sleep = checker.time.sleep
+        checker.fetch_repo = fake_fetch
+        checker.time.sleep = lambda _seconds: None
+        try:
+            checker.check_remote([(slug, status, 1)])
+        finally:
+            checker.fetch_repo = original_fetch
+            checker.time.sleep = original_sleep
+
+    def test_404_is_a_definitive_failure(self) -> None:
+        self.assertEqual(checker.classify_http_error(404), checker.MISSING)
+
+    def test_auth_failure_is_reported_separately(self) -> None:
+        self.assertEqual(checker.classify_http_error(401), checker.FORBIDDEN)
+
+    def test_rate_limit_is_detected(self) -> None:
+        self.assertEqual(checker.classify_http_error(429), checker.RATE_LIMITED)
+        self.assertEqual(
+            checker.classify_http_error(403, body="API rate limit exceeded"),
+            checker.RATE_LIMITED,
+        )
+        self.assertEqual(
+            checker.classify_http_error(403, headers={"x-ratelimit-remaining": "0"}),
+            checker.RATE_LIMITED,
+        )
+
+    def test_permission_error_is_not_a_rate_limit(self) -> None:
+        self.assertEqual(
+            checker.classify_http_error(403, body="Resource not accessible by integration"),
+            checker.FORBIDDEN,
+        )
+
+    def test_server_errors_are_transient(self) -> None:
+        for code in (500, 502, 503, 504):
+            self.assertEqual(checker.classify_http_error(code), checker.TRANSIENT)
+
+    def test_transient_failure_warns_instead_of_failing(self) -> None:
+        self._with_fake_fetch(lambda slug, headers: (None, checker.TRANSIENT, "HTTP 502"))
+        self.assertEqual(checker.problems, [])
+        self.assertEqual(len(checker.warnings), 1)
+        self.assertIn("network problem", checker.warnings[0])
+
+    def test_transient_failure_is_retried(self) -> None:
+        calls = []
+
+        def fake_fetch(slug, headers):
+            calls.append(slug)
+            return None, checker.TRANSIENT, "HTTP 502"
+
+        self._with_fake_fetch(fake_fetch)
+        self.assertEqual(len(calls), checker.RETRY_ATTEMPTS)
+
+    def test_missing_repository_fails(self) -> None:
+        self._with_fake_fetch(lambda slug, headers: (None, checker.MISSING, "HTTP 404"))
+        self.assertEqual(len(checker.problems), 1)
+        self.assertIn("does not exist on GitHub", checker.problems[0])
+
+    def test_forbidden_repository_fails(self) -> None:
+        self._with_fake_fetch(lambda slug, headers: (None, checker.FORBIDDEN, "HTTP 403"))
+        self.assertEqual(len(checker.problems), 1)
+        self.assertIn("permissions", checker.problems[0])
+
+    def test_rate_limit_stops_the_sweep_with_one_warning(self) -> None:
+        calls = []
+
+        def fake_fetch(slug, headers):
+            calls.append(slug)
+            return None, checker.RATE_LIMITED, "HTTP 403"
+
+        self._with_fake_fetch(fake_fetch, slug="ami3go/example")
+        self.assertEqual(checker.problems, [])
+        self.assertEqual(len(checker.warnings), 1)
+        self.assertIn("rate limit", checker.warnings[0])
+
+    def test_archived_repository_fails(self) -> None:
+        self._with_fake_fetch(
+            lambda slug, headers: ({"archived": True, "private": False}, "", "")
+        )
+        self.assertEqual(len(checker.problems), 1)
+        self.assertIn("archived", checker.problems[0])
+
+    def test_private_repository_fails(self) -> None:
+        self._with_fake_fetch(
+            lambda slug, headers: ({"archived": False, "private": True}, "", "")
+        )
+        self.assertEqual(len(checker.problems), 1)
+        self.assertIn("is private", checker.problems[0])
+
+
 if __name__ == "__main__":
     unittest.main()

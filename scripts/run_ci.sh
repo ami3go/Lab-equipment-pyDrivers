@@ -25,6 +25,11 @@ step() { printf '\n==> %s\n' "$1"; }
 
 step "Index consistency (scripts/check_index.py)"
 if [ "$REMOTE" -eq 1 ]; then
+  if [ -z "${GITHUB_TOKEN:-}" ] && [ -z "${GH_TOKEN:-}" ]; then
+    echo "note: GITHUB_TOKEN/GH_TOKEN is not set; the anonymous GitHub API allows"
+    echo "      only 60 requests per hour, which is fewer than this index needs."
+    echo "      The remote check will report a rate-limit warning instead of failing."
+  fi
   python3 scripts/check_index.py --check-remote
 else
   python3 scripts/check_index.py

@@ -23,6 +23,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -44,10 +45,15 @@ GITHUB_LINK_RE = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_
 MD_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 
 problems: list[str] = []
+warnings: list[str] = []
 
 
 def fail(message: str) -> None:
     problems.append(message)
+
+
+def warn(message: str) -> None:
+    warnings.append(message)
 
 
 def read(path: str) -> str:
@@ -222,6 +228,71 @@ def check_relative_links() -> None:
                     fail(f"{relative}: broken relative link -> {link}")
 
 
+# A GitHub API hiccup is not a broken index entry. Only a definitive
+# answer ("404", "archived", "private") is a failure; a transport error is
+# retried, and if it persists it is reported as a warning so that a network
+# outage cannot block an unrelated pull request.
+MISSING = "missing"
+FORBIDDEN = "forbidden"
+TRANSIENT = "transient"
+RATE_LIMITED = "rate_limited"
+
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 2.0
+
+# The unauthenticated GitHub API allows 60 requests per hour per address,
+# which a full index sweep exceeds. Set GITHUB_TOKEN to raise the limit.
+RATE_LIMIT_HINT = (
+    "GitHub API rate limit reached (unauthenticated requests are limited to "
+    "60/hour) -- set GITHUB_TOKEN or GH_TOKEN and try again"
+)
+
+
+def classify_http_error(code: int, body: str = "", headers: dict | None = None) -> str:
+    """Map an HTTP status code to MISSING, FORBIDDEN, TRANSIENT or RATE_LIMITED."""
+    headers = headers or {}
+    if code == 404:
+        return MISSING
+    if code == 429:
+        return RATE_LIMITED
+    if code == 403:
+        remaining = headers.get("x-ratelimit-remaining")
+        if remaining == "0" or "rate limit" in body.lower():
+            return RATE_LIMITED
+        return FORBIDDEN
+    if code == 401:
+        return FORBIDDEN
+    return TRANSIENT
+
+
+def fetch_repo(slug: str, headers: dict[str, str]) -> tuple[dict | None, str, str]:
+    """Fetch a repository's metadata.
+
+    Returns (payload, kind, detail) where kind is one of "", MISSING,
+    FORBIDDEN, RATE_LIMITED or TRANSIENT. An empty kind means the fetch
+    succeeded.
+    """
+    owner, repo = slug.split("/", 1)
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.load(response), "", ""
+    except urllib.error.HTTPError as error:
+        body = ""
+        try:
+            body = error.read().decode("utf-8", "replace")
+        except Exception:  # pragma: no cover - the body is best effort only
+            pass
+        response_headers = dict(error.headers or {})
+        kind = classify_http_error(error.code, body, response_headers)
+        return None, kind, f"HTTP {error.code}"
+    except urllib.error.URLError as error:
+        return None, TRANSIENT, f"could not reach GitHub: {error.reason}"
+    except (TimeoutError, json.JSONDecodeError, OSError) as error:
+        return None, TRANSIENT, str(error)
+
+
 def check_remote(found: list[tuple[str, str, int]]) -> None:
     """Confirm that every indexed GitHub repository still resolves."""
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
@@ -230,20 +301,34 @@ def check_remote(found: list[tuple[str, str, int]]) -> None:
         headers["Authorization"] = f"Bearer {token}"
 
     for slug, status, number in found:
-        owner, repo = slug.split("/", 1)
-        url = f"https://api.github.com/repos/{owner}/{repo}"
-        request = urllib.request.Request(url, headers=headers)
-        try:
-            with urllib.request.urlopen(request, timeout=20) as response:
-                payload = json.load(response)
-        except urllib.error.HTTPError as error:
-            if error.code == 404:
-                fail(f"README.md:{number}: {slug} does not exist on GitHub")
-            else:
-                fail(f"README.md:{number}: {slug} returned HTTP {error.code}")
+        payload = None
+        kind = ""
+        detail = ""
+
+        for attempt in range(1, RETRY_ATTEMPTS + 1):
+            payload, kind, detail = fetch_repo(slug, headers)
+            if kind != TRANSIENT:
+                break
+            if attempt < RETRY_ATTEMPTS:
+                time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+
+        if kind == MISSING:
+            fail(f"README.md:{number}: {slug} does not exist on GitHub")
             continue
-        except urllib.error.URLError as error:
-            fail(f"README.md:{number}: could not reach GitHub for {slug}: {error.reason}")
+        if kind == RATE_LIMITED:
+            warn(f"{RATE_LIMIT_HINT} -- skipping the remaining remote checks")
+            return
+        if kind == FORBIDDEN:
+            fail(
+                f"README.md:{number}: could not read {slug} from GitHub ({detail}); "
+                f"check the token's permissions or the rate limit"
+            )
+            continue
+        if kind == TRANSIENT:
+            warn(
+                f"README.md:{number}: could not verify {slug} -- {detail}. "
+                f"Treating this as a network problem, not a broken index entry."
+            )
             continue
 
         if payload.get("archived"):
@@ -284,6 +369,8 @@ def main() -> int:
         print(f"index check FAILED ({len(problems)} problem(s)):")
         for problem in problems:
             print(f"  - {problem}")
+        for warning in warnings:
+            print(f"  warning: {warning}")
         return 1
 
     print(
@@ -291,6 +378,8 @@ def main() -> int:
         f"{len([n for n in os.listdir(GUIDES_DIR) if LPDS_FILE_RE.match(n)])} "
         f"LPDS documents indexed"
     )
+    for warning in warnings:
+        print(f"  warning: {warning}")
     return 0
 
 

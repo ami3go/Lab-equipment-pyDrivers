@@ -58,7 +58,9 @@ index and lints the Markdown. Run the same checks before opening a PR:
 
 `--remote` needs network access and honours `GITHUB_TOKEN`/`GH_TOKEN` if set; it
 fails the run if an indexed repository has been deleted, renamed, archived, or
-turned private. The Markdown lint rule set lives in `.markdownlint-cli2.jsonc`.
+turned private. The anonymous GitHub API allows only 60 requests per hour,
+which is fewer than the index needs, so set a token before using `--remote`.
+The Markdown lint rule set lives in `.markdownlint-cli2.jsonc`.
 
 ## Reporting issues with an existing driver
 
