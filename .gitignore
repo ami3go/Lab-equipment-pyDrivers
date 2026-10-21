@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node (markdownlint-cli2 is run through npx)
+node_modules/
+package-lock.json

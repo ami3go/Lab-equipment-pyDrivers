@@ -1,0 +1,54 @@
+{
+  // Rule selection for the Lab pyDrivers hub.
+  //
+  // The hub is a documentation repository: the bulk of its content is the
+  // LPDS standard, written in a prose-first, one-idea-per-paragraph style
+  // that deliberately wraps at the width of the sentence rather than at a
+  // fixed column. Rules that fight that style (line length in particular)
+  // are switched off, and the remaining rules are the ones that catch real
+  // editing mistakes -- broken structure, inconsistent headings, stray
+  // whitespace -- rather than house style.
+  //
+  // Everything that is enabled here already passes on the current tree, so
+  // CI fails on a regression rather than on pre-existing content.
+  "config": {
+    "default": false,
+    "MD001": true, // heading-increment: heading levels must not skip
+    "MD003": true, // heading-style: consistent ATX heading style
+    "MD004": true, // ul-style: consistent unordered list marker
+    "MD009": true, // no-trailing-spaces
+    "MD010": true, // no-hard-tabs
+    "MD018": true, // no-missing-space-atx
+    "MD019": true, // no-multiple-space-atx
+    "MD022": true, // blanks-around-headings
+    "MD023": true, // heading-start-left
+    "MD024": true, // no-duplicate-heading
+    "MD025": true, // single-title
+    "MD026": true, // no-trailing-punctuation
+    "MD028": true, // no-blanks-blockquote
+    "MD033": true, // no-inline-html
+    "MD035": true, // hr-style
+    "MD037": true, // no-space-in-emphasis
+    "MD038": true, // no-space-in-code
+    "MD039": true, // no-space-in-links
+    "MD041": true, // first-line-heading
+    "MD042": true, // no-empty-links
+    "MD045": true, // no-alt-text
+    "MD046": true, // code-block-style
+    "MD047": true, // single-trailing-newline
+    "MD048": true, // code-fence-style
+    "MD049": true, // emphasis-style
+    "MD050": true, // strong-style
+    "MD051": true, // link-fragments
+    "MD053": true, // link-image-reference-definitions
+    "MD054": true, // link-image-style
+    "MD055": true, // table-pipe-style
+    "MD056": true, // table-column-count
+    "MD058": true, // tables-surrounded-by-blanks
+    "MD059": true, // descriptive-link-text
+    "MD060": true // table-cell-spacing
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**", ".git/**"],
+  "fix": false
+}
