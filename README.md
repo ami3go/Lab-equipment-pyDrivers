@@ -50,8 +50,23 @@ all driver repositories.
 
 | Purpose | Repository | Status |
 |---|---|---|
-| SCPI interface core (base classes for SCPI-speaking instrument drivers) | [scpi-driver-core](https://github.com/ami3go/scpi-driver-core) (private) | wip |
+| SCPI interface core (transport, session and error-handling base classes shared by SCPI-speaking instrument drivers) | [scpi-driver-core](https://github.com/ami3go/scpi-driver-core) | wip |
+| CH9120 / YHQ001 eight-channel Ethernet relay board toolkit (discovery, configuration, relay control, CLI and Tkinter GUIs) | [ch9120-ethernet-relay-toolkit](https://github.com/ami3go/ch9120-ethernet-relay-toolkit) | untested |
 | PicoSDK Python bindings (official Pico Technology SDK for PicoScope/PicoLog devices, used for test equipment) | [picosdk-python-wrappers](https://github.com/picotech/picosdk-python-wrappers) | external |
+
+## Adapters and integrations
+
+An adapter binds an already-published driver to one framework — Robot Framework, a
+web UI, a CLI — and contains no device logic of its own. See
+[LPDS-015](AI_Guides/LPDS-015_Plugin_and_Adapter_Architecture.md).
+
+| Framework | Repository | Status |
+|---|---|---|
+| Robot Framework libraries for several of the drivers indexed above | [RobotFrameworks_hw_drivers](https://github.com/ami3go/RobotFrameworks_hw_drivers) | wip |
+| NiceGUI browser interface for the Vötschtechnik climate chamber driver | [VotschTechnik-climate-chamber-GUI](https://github.com/ami3go/VotschTechnik-climate-chamber-GUI) | wip |
+
+> Adding an adapter or a shared library? Open a PR here to add it to the matching
+> table once its repo exists.
 
 ## Driver & AI Guide Standards
 
