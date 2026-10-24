@@ -7,6 +7,8 @@ Each driver lives in its own repository under this account, named `<device>-driv
 it hosts shared documentation, contribution guidelines, and the master list of
 all driver repositories.
 
+**Hub index version:** 0.1.0 · **External SCPI catalog:** [3rd path drivers](docs/third-party-scpi-drivers.md) (82 repositories; snapshot 2026-10-24).
+
 ## Why a hub + many repos?
 
 - Each driver can be versioned, tagged, and released independently.
@@ -45,6 +47,14 @@ all driver repositories.
 > Status labels follow [LPDS-001 §9](AI_Guides/LPDS-001_Platform_Requirements.md):
 > `wip` (in development), `untested` (feature-complete, simulator-verified, not yet
 > verified on real hardware), `stable` (verified end-to-end on real hardware).
+
+## 3rd path drivers
+
+[**3rd path drivers — Public GitHub SCPI driver catalog**](docs/third-party-scpi-drivers.md)
+
+A curated external reference with **82 GitHub repositories in 8 categories**, including instrument drivers, test frameworks, and transport libraries. Each entry includes a GitHub link, latest verified default-branch commit date (UTC), programming language, reported automated-test evidence, and documented hardware-test evidence.
+
+**Snapshot:** 2026-10-24 · **Catalog version:** 0.1.0. Test statuses reflect publicly identifiable evidence, not independently executed qualification. These are third-party references, not driver releases maintained by this project.
 
 ## Shared libraries
 
